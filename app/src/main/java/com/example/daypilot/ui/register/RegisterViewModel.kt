@@ -1,4 +1,7 @@
 package com.example.daypilot.ui.register
 
-class RegisterViewModel {
+import androidx.lifecycle.ViewModel
+
+class RegisterViewModel : ViewModel() {
+    // TODO: Implement the ViewModel
 }
