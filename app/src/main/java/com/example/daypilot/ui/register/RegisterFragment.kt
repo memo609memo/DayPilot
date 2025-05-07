@@ -65,13 +65,11 @@ class RegisterFragment : Fragment() {
 
         viewModel.registerSuccess.observe(viewLifecycleOwner, { success ->
             if (success) {
-                Toast.makeText(activity, "Registered Successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, "Registered Successfully, Verify Email", Toast.LENGTH_SHORT).show()
                 findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
 
-                //todo: add email verification
-
             } else {
-                Toast.makeText(activity, "Registration Failed", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, "ERROR: Email already in use", Toast.LENGTH_SHORT).show()
             }
         })
 

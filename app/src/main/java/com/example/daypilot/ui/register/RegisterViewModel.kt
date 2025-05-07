@@ -22,7 +22,18 @@ class RegisterViewModel : ViewModel() {
 
         auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                _registerSuccess.value = true
+
+
+                val user = auth.currentUser
+
+                user?.sendEmailVerification()
+                    ?.addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            _registerSuccess.value = true
+                        } else {
+                            _registerError.value = "Email verification failed"
+                        }
+                    }
             } else {
                 Log.e("Register", "createUserWithEmail:failure", task.exception)
                 _registerSuccess.value = false
