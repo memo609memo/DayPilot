@@ -6,9 +6,44 @@
         android:layout_height="match_parent"
         tools:context=".ui.login.LoginFragment">
 
+    <ImageView
+            android:src="@drawable/logo1"
+            android:layout_width="175dp"
+            android:layout_height="175dp"
+            android:id="@+id/logoView"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="25dp"/>
+    <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress"
+            android:hint="Enter Your Email"
+            android:ems="10"
+            android:id="@+id/emailLoginEditText"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="225dp"/>
+    <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:hint="Enter Your Password"
+            android:ems="10"
+            android:id="@+id/passwordLoginEditText"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="285dp"/>
+    <Button
+            android:text="Login"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/loginButton"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="400dp"/>
+
     <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Hello"/>
+            android:text="New? Create an account clicking HERE"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="600dp"/>
 
 </FrameLayout>
