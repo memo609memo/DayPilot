@@ -69,8 +69,6 @@ class LoginFragment : Fragment() {
 
     }
 
-    //todo: implement forgot password
-
     private fun showForgotPasswordDialog() {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle("Forgot Password")

@@ -39,7 +39,4 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    //todo: forgot password
-
-
 }

@@ -42,17 +42,34 @@ class RegisterFragment : Fragment() {
 
         view.findViewById<Button>(R.id.registerButton).setOnClickListener {
 
-            val email = emailText.text.toString()
-            val password = passwordText.text.toString()
+            val email = emailText.text.toString().trim()
+            val password = passwordText.text.toString().trim()
+            val confirmPassword = confirmPasswordText.text.toString().trim()
+
+            if(email.isEmpty() || password.isEmpty()){
+                Toast.makeText(activity, "Please fill all the fields", Toast.LENGTH_SHORT).show()
+            } else if(email == password) {
+                Toast.makeText(activity, "Email and password cannot be the same", Toast.LENGTH_SHORT).show()
+            } else if(password != confirmPassword) {
+                Toast.makeText(activity, "Passwords do not match", Toast.LENGTH_SHORT).show()
+            } else if(!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()){
+                Toast.makeText(activity, "Please enter a valid email address", Toast.LENGTH_SHORT).show()
+            } else if(password.length < 7){
+                Toast.makeText(activity, "Password must be at least 7 characters long", Toast.LENGTH_SHORT).show()
+            }
 
             viewModel.registerUser(email, password)
         }
+
 
 
         viewModel.registerSuccess.observe(viewLifecycleOwner, { success ->
             if (success) {
                 Toast.makeText(activity, "Registered Successfully", Toast.LENGTH_SHORT).show()
                 findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
+
+                //todo: add email verification
+
             } else {
                 Toast.makeText(activity, "Registration Failed", Toast.LENGTH_SHORT).show()
             }
