@@ -48,6 +48,14 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="450dp"/>
 
+    <Button
+            android:text="Login Instead"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/goLoginButton"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="550dp"/>
+
     <TextView
             android:text="Already have an account? Click HERE"
             android:layout_width="wrap_content"

@@ -39,11 +39,28 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="400dp"/>
 
+    <Button
+            android:text="Register Instead"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/goRegisterButton"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="500dp"/>
+
+    <Button
+            android:text="Forgot Password"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/forgotPasswordButton"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="550dp"/>
+
     <TextView
             android:text="New? Create an account clicking HERE"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="600dp"/>
+
 
 </FrameLayout>
