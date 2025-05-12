@@ -14,6 +14,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.daypilot.R
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import com.example.daypilot.MainActivity
 import com.google.firebase.auth.FirebaseAuth
 
@@ -47,7 +48,7 @@ class LoginFragment : Fragment() {
             viewModel.loginUser(email, password)
         }
 
-        view.findViewById<Button>(R.id.goRegisterButton).setOnClickListener {
+        view.findViewById<TextView>(R.id.goRegisterButton).setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
         }
 
@@ -63,7 +64,7 @@ class LoginFragment : Fragment() {
             Toast.makeText(requireContext(), loginError, Toast.LENGTH_SHORT).show()
         }
 
-        view.findViewById<Button>(R.id.forgotPasswordButton).setOnClickListener {
+        view.findViewById<TextView>(R.id.forgotPasswordButton).setOnClickListener {
             showForgotPasswordDialog()
         }
 

@@ -13,6 +13,7 @@ import com.example.daypilot.R
 import com.example.daypilot.ui.login.LoginViewModel
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import com.example.daypilot.MainActivity
 
 class RegisterFragment : Fragment() {
@@ -76,7 +77,7 @@ class RegisterFragment : Fragment() {
 
 
 
-        view.findViewById<Button>(R.id.goLoginButton).setOnClickListener {
+        view.findViewById<TextView>(R.id.goLoginButton).setOnClickListener {
             findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
         }
 
