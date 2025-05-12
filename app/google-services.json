@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "473062038594",
+    "project_id": "daypilot-3eda1",
+    "storage_bucket": "daypilot-3eda1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473062038594:android:7d01c0c9fab870874ca1db",
+        "android_client_info": {
+          "package_name": "com.example.daypilot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDfJoeTuAuljT-jpmT8zNQ8ZObNCrrveEM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

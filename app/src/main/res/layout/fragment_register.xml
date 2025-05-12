@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.register.RegisterFragment">
+
+    <ImageView
+            android:src="@drawable/logo1"
+            android:layout_width="175dp"
+            android:layout_height="175dp"
+            android:id="@+id/logoView"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="25dp"/>
+    <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress"
+            android:hint="Enter Your Email"
+            android:ems="10"
+            android:id="@+id/emailRegisterEditText"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="225dp"/>
+    <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:hint="Enter Your Password"
+            android:ems="10"
+            android:id="@+id/passwordRegisterEditText"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="285dp"/>
+    <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:hint="Enter Your Password"
+            android:ems="10"
+            android:id="@+id/passwordConfirmRegisterEditText"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="340dp"/>
+    <Button
+            android:text="register"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/registerButton"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="450dp"/>
+
+    <Button
+            android:text="Login Instead"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/goLoginButton"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="550dp"/>
+
+    <TextView
+            android:text="Already have an account? Click HERE"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="600dp"/>
+
+</FrameLayout>
