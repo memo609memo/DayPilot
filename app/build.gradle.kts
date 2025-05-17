@@ -51,7 +51,7 @@ dependencies {
 
     implementation("com.google.firebase:firebase-auth:23.2.0")
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
-
+    implementation ("com.applandeo:material-calendar-view:1.9.0-rc03")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
