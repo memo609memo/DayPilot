@@ -29,10 +29,13 @@ import org.json.JSONObject
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import com.example.daypilot.BuildConfig
 
 val appEmail = "app.daypilot@gmail.com"
 val userEmail = FirebaseAuth.getInstance().currentUser?.email
-val API_Key = "removed"
+
+val API_Key = BuildConfig.SENDGRID_API_KEY
+
 
 class SettingsFragment : Fragment() {
 
