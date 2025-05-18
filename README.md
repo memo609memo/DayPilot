@@ -61,7 +61,7 @@ Version 1.0 not released yet - No download available.
     1. Open Android Studio
     2. Cliick "Open an Excisting Project" and select cloned directory
     3. let Android Studio finishing indexing and syncing Gradle
--Configure Firebase
+- Configure Firebase
    Firebase is already integrated into the project (Auth + Firestore).  
 No additional setup is required unless you're creating a new Firebase project.
 - Run the App
@@ -70,8 +70,8 @@ No additional setup is required unless you're creating a new Firebase project.
   2. Min SDK: 24
   3. Target SDK: 35
   4. Libraries used (so far)
-     -Firebase Authentication & Firestore
-     -Kizitonwose/Calendar(for calendar UI)
+     - Firebase Authentication & Firestore
+     - Kizitonwose/Calendar(for calendar UI)
      
 
 ## License:
@@ -108,22 +108,22 @@ Phase 1: Core Functionality
 
 Phase 2: Add flexibility, personalization and media enhacements
 
--Switch between daily and weekly calendar view 
--Add images inside task notes 
--Add voice memos inside task notes 
--Light mode/Dark mode theming 
--Language toggle: English -Spanish 
--Voice assistant integration (AI agent that creates tasks via voice commands)
+- Switch between daily and weekly calendar view 
+- Add images inside task notes 
+- Add voice memos inside task notes 
+- ight mode/Dark mode theming 
+- Language toggle: English -Spanish 
+- Voice assistant integration (AI agent that creates tasks via voice commands)
 
 Phase 3:Advanced personalizations
 
--Task completition analytics dashboard(completed vs missed)
--Live task countdown timer 
--Email Summaries 
--AI-generated schedules based on user behavior/preferences (deep learning
--Handwritten notes support 
--Improved animations and transitions
--Prepare and optimize release build
--Write complete documentation (README, code comments, API docs)
+- Task completition analytics dashboard(completed vs missed)
+- Live task countdown timer 
+- Email Summaries 
+- AI-generated schedules based on user behavior/preferences (deep learning
+- Handwritten notes support 
+- Improved animations and transitions
+- Prepare and optimize release build
+- Write complete documentation (README, code comments, API docs)
 
 
