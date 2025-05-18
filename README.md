@@ -48,6 +48,15 @@ Built in Android notifications
 Built in Calendar  
 Our own API to call upon (learn how to call below)  
 
+  <h3 align="center">API</h3>
+
+**Flask** – Lightweight Python framework for building RESTful APIs
+-  Flask receives incoming POST requests from the Android app.
+- It parses the JSON data that contains the user's spoken input (converted to text by android built-in MicrophoneX).
+- The text is passed to the AI model for intent parsing and task extraction.
+- Flask then sends the model’s response back to the app in structured JSON format.
+ 
+
 ## Installation:
 
 Version 1.0 not released yet - No download available.
@@ -91,10 +100,6 @@ Abubakar Mohammed
 ## Project-Status:
 
 Pre-Alpha
-
-## API-References:
-
-
 
 ## Roadmap:
 
