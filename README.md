@@ -51,7 +51,28 @@ Version 1.0 not released yet - No download available.
 
 ## Development-Setup:
 
-TO BE DONE
+#Prerequisites 
+- Android Studio
+- Java Development Kit - Required by Android Studio and Gradle for kotlin builds
+- Git
+- An Android device or emulator API 34 or higher
+- Clone the Repository
+- Open the projetc in Android Studio
+    1. Open Android Studio
+    2. Cliick "Open an Excisting Project" and select cloned directory
+    3. let Android Studio finishing indexing and syncing Gradle
+-Configure Firebase
+   Firebase is already integrated into the project (Auth + Firestore).  
+No additional setup is required unless you're creating a new Firebase project.
+- Run the App
+- Tech Stach Summary
+  1. Language: Kotlin
+  2. Min SDK: 24
+  3. Target SDK: 35
+  4. Libraries used (so far)
+     -Firebase Authentication & Firestore
+     -Kizitonwose/Calendar(for calendar UI)
+     
 
 ## License:
 
