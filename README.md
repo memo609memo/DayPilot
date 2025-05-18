@@ -95,5 +95,35 @@ Pre-Alpha
 
 ## Roadmap:
 
+Phase 1: Core Functionality 
+
+- User Authentication(signup/login via Firebase)
+- Clickable calendar view using Kizitonwose/Calendar
+- Assign tasks to specific hours during the day
+- View daily schedule with hourly task breakdown
+- Add notes to individual tasks
+- Set tasks to repeat every X days
+- Task start and end notifications using AlarmManager
+- Store data using Firestore
+
+Phase 2: Add flexibility, personalization and media enhacements
+
+-Switch between daily and weekly calendar view 
+-Add images inside task notes 
+-Add voice memos inside task notes 
+-Light mode/Dark mode theming 
+-Language toggle: English -Spanish 
+-Voice assistant integration (AI agent that creates tasks via voice commands)
+
+Phase 3:Advanced personalizations
+
+-Task completition analytics dashboard(completed vs missed)
+-Live task countdown timer 
+-Email Summaries 
+-AI-generated schedules based on user behavior/preferences (deep learning
+-Handwritten notes support 
+-Improved animations and transitions
+-Prepare and optimize release build
+-Write complete documentation (README, code comments, API docs)
 
 
