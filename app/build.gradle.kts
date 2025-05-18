@@ -8,6 +8,12 @@ android {
     namespace = "com.example.daypilot"
     compileSdk = 35
 
+    packaging {
+        resources {
+            excludes += "/META-INF/DEPENDENCIES"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.daypilot"
         minSdk = 24
@@ -47,6 +53,7 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.8.4")
     implementation("androidx.navigation:navigation-ui-ktx:2.8.4")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
+    implementation("com.sendgrid:sendgrid-java:5.0.0-rc.1")
 
     implementation("com.google.firebase:firebase-auth:23.2.0")
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
