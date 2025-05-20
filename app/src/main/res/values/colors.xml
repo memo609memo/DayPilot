@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="inputTextBox">#C5D2CD</color>
+    <color name="navBarLoginButton">#9DB1AA</color>
+    <color name="backgroundColor">#E2DFDA</color>
 </resources>
