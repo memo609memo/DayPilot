@@ -21,7 +21,7 @@ class SplashActivity : AppCompatActivity() {
 
             //persistent login
             val user = FirebaseAuth.getInstance().currentUser
-            val intent = if (user == null) {
+            val intent = if (user != null) {
                 Intent(this@SplashActivity, MainActivity::class.java)
             } else {
                 Intent(this@SplashActivity, AuthActivity::class.java)
