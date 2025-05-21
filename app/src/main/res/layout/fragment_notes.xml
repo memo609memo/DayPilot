@@ -9,10 +9,20 @@
     android:fitsSystemWindows="true"
     app:menu="@menu/bottom_nav_menu">
 
-<com.applandeo.materialcalendarview.CalendarView
-    android:id="@+id/calendarView"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    app:headerColor="@color/navBarLoginButton"
-    app:todayLabelColor="@color/navBarLoginButton" />
+    <com.applandeo.materialcalendarview.CalendarView
+        android:id="@+id/calendarView"
+        android:layout_width="410dp"
+        android:layout_height="308dp"
+        app:anotherMonthsDaysLabelsColor="@color/white"
+        app:daysLabelsColor="@color/black"
+        app:headerColor="#009688"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.117"
+        app:pagesColor="@color/white"
+        app:type="one_day_picker" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
