@@ -1,9 +1,8 @@
 package com.example.daypilot.ui.settings
 
 import android.app.AlertDialog
-import android.app.Dialog
+
 import android.os.Bundle
-import com.sendgrid.*
 import android.text.InputType
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -12,21 +11,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Switch
 import android.widget.Toast
-import androidx.fragment.app.DialogFragment
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.fragment.findNavController
 import com.example.daypilot.R
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.sendgrid.helpers.mail.Mail
-import com.sendgrid.helpers.mail.objects.Content
-import com.sendgrid.helpers.mail.objects.Email
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import com.example.daypilot.BuildConfig
@@ -35,7 +27,6 @@ val appEmail = "app.daypilot@gmail.com"
 val userEmail = FirebaseAuth.getInstance().currentUser?.email
 
 val API_Key = BuildConfig.SENDGRID_API_KEY
-
 
 class SettingsFragment : Fragment() {
 
@@ -58,21 +49,34 @@ class SettingsFragment : Fragment() {
         }
 
         view.findViewById<Button>(R.id.btnDeleteAccount).setOnClickListener {
-            AlertDialog.Builder(requireContext())
-                .setTitle("Delete Account")
-                .setMessage("Are you sure you want to delete your account? This action cannot be undone.")
-                .setPositiveButton("Delete") { dialog, _ ->
-                    dialog.dismiss()
-                    FirebaseAuth.getInstance().currentUser?.delete()
-                }
+            val input = EditText(requireContext())
+            input.hint = "Type DELETE"
+            input.inputType = InputType.TYPE_TEXT_VARIATION_LONG_MESSAGE
+
+            val alertDialog = AlertDialog.Builder(requireContext())
+                .setTitle("Delete Account? This cannot be undone.")
+                .setView(input)
+                .setMessage("Type DELETE to confirm and delete your account.")
+                .setPositiveButton("Confirm", null)
                 .setNegativeButton("Cancel") { dialog, _ ->
                     dialog.dismiss()
                 }
                 .create()
-                .show()
 
-            val navController = findNavController()
-            navController.setGraph(R.navigation.auth_navigation)
+            alertDialog.show()
+
+
+            alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val userInput = input.text.toString().trim()
+                if (userInput == "DELETE") {
+                    alertDialog.dismiss()
+                    FirebaseAuth.getInstance().currentUser?.delete()
+                    val navController = findNavController()
+                    navController.setGraph(R.navigation.auth_navigation)
+                } else {
+                    Toast.makeText(requireContext(), "Please type DELETE to confirm the deletion of your account.", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         view.findViewById<Button>(R.id.btnReportProblem).setOnClickListener {
@@ -102,6 +106,16 @@ class SettingsFragment : Fragment() {
                 .create()
                 .show()
 
+        }
+
+
+        view.findViewById<Switch>(R.id.switchDarkMode).setOnCheckedChangeListener { _, isChecked ->
+            if (!isChecked) {
+                AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
+            }
+            else {
+                AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_YES))
+            }
         }
     }
 }
@@ -138,7 +152,7 @@ fun sendEmailToApp(problem: String) {
             conn.doOutput = true
 
             val requestBody = json.toString()
-            Log.d("SendGrid", "Sending JSON: $requestBody")
+
 
             val output = conn.outputStream
             output.write(requestBody.toByteArray(Charsets.UTF_8))

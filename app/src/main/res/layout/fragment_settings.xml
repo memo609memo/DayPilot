@@ -3,17 +3,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="?attr/screens_background"
     tools:context=".ui.settings.SettingsFragment">
+
 
 
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_weight="1"
-        android:src="@drawable/logo1" />
+        android:layout_height="275dp"
+        android:src="@drawable/logo" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -32,7 +33,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Notifications"
-            android:textColor="#000000"
+            android:textColor="?attr/texts_color"
             android:textSize="16sp" />
 
         <Switch
@@ -58,7 +59,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Dark Mode"
-            android:textColor="#000000"
+            android:textColor="?attr/texts_color"
             android:textSize="16sp" />
 
         <Switch
@@ -83,7 +84,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Tasks receipts to email"
-            android:textColor="#000000"
+            android:textColor="?attr/texts_color"
             android:textSize="16sp" />
 
         <Switch
@@ -99,8 +100,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:text="Report a problem"
-        android:backgroundTint="#A9BDB5"
-        android:textColor="#000000"
+        android:backgroundTint="?attr/buttons_background"
+        android:textColor="?attr/texts_color"
         android:layout_marginBottom="12dp" />
 
     <Button
@@ -109,8 +110,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:text="Logout"
-        android:backgroundTint="#A9BDB5"
-        android:textColor="#000000"
+        android:backgroundTint="?attr/buttons_background"
+        android:textColor="?attr/texts_color"
         android:layout_marginBottom="12dp" />
 
     <Button
@@ -119,7 +120,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:text="Delete Account"
-        android:backgroundTint="#A9BDB5"
-        android:textColor="#000000" />
+        android:backgroundTint="?attr/buttons_background"
+        android:textColor="?attr/texts_color" />
 
 </LinearLayout>
