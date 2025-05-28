@@ -7,15 +7,18 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.speech.RecognizerIntent
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.Toast
+import com.example.daypilot.R
 
 class FloatingButton(private val context: Context) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-    private val micButton = ImageView(context)
+    private val inflaterButton = LayoutInflater.from(context)
+    private val floatingButtonView: View
 
     private val params = WindowManager.LayoutParams(
         WindowManager.LayoutParams.WRAP_CONTENT,
@@ -29,20 +32,21 @@ class FloatingButton(private val context: Context) {
     )
 
     init {
-        micButton.setImageResource(android.R.drawable.ic_btn_speak_now)
-        micButton.setOnTouchListener(FloatingTouchListener())
-        micButton.setOnClickListener {
+        floatingButtonView = inflaterButton.inflate(R.layout.floating_mic_button, null,false)
+        val micIcon = floatingButtonView.findViewById<ImageView>(R.id.mic_icon)
+        micIcon.setOnTouchListener(FloatingTouchListener())
+        micIcon.setOnClickListener {
             Toast.makeText(context, "Mic button clicked!", Toast.LENGTH_SHORT).show()
             startSpeechRecognition()
         }
         params.gravity = Gravity.TOP or Gravity.START
         params.x = 100
         params.y = 100
-        windowManager.addView(micButton, params)
+        windowManager.addView(floatingButtonView, params)
     }
 
     fun remove() {
-        windowManager.removeView(micButton) // button when app close
+        windowManager.removeView(floatingButtonView) // button when app close
     }
 
     private fun startSpeechRecognition() {
@@ -72,7 +76,7 @@ class FloatingButton(private val context: Context) {
                 MotionEvent.ACTION_MOVE -> {
                     params.x = initialX + (event.rawX - initialTouchX).toInt()
                     params.y = initialY + (event.rawY - initialTouchY).toInt()
-                    windowManager.updateViewLayout(micButton, params)
+                    windowManager.updateViewLayout(floatingButtonView, params)
                     return true
                 }
             }
