@@ -20,4 +20,13 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="68dp"
+        android:layout_height="58dp"
+        android:text="Mic"
+        tools:layout_editor_absoluteX="171dp"
+        tools:layout_editor_absoluteY="582dp" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
