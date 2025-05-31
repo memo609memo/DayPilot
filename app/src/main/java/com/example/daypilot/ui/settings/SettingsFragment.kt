@@ -22,11 +22,27 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import com.example.daypilot.BuildConfig
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+
 
 val appEmail = "app.daypilot@gmail.com"
 val userEmail = FirebaseAuth.getInstance().currentUser?.email
 
 val API_Key = BuildConfig.SENDGRID_API_KEY
+
+var settings = UserSettings()
+
+
+val uid = FirebaseAuth.getInstance().currentUser?.uid
+val ref = FirebaseDatabase.getInstance().getReference("UserSettings/$uid")
+
+var darkMode = false
+var notifications = false
+var receipts = false
+
 
 class SettingsFragment : Fragment() {
 
@@ -43,10 +59,37 @@ class SettingsFragment : Fragment() {
 
         view.findViewById<Button>(R.id.btnLogout).setOnClickListener {
             FirebaseAuth.getInstance().signOut()
-
             val navController = findNavController()
             navController.setGraph(R.navigation.auth_navigation)
+
+
+
         }
+
+        ref.addListenerForSingleValueEvent(object: ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val userSettings = snapshot.getValue(UserSettings::class.java)
+                userSettings?. let {
+                    settings.darkModeOn = it.darkModeOn
+                    settings.receiptsOn = it.receiptsOn
+                    settings.notificationsOn = it.notificationsOn
+
+                    view.findViewById<Switch>(R.id.switchDarkMode).isChecked = settings.darkModeOn
+                    view.findViewById<Switch>(R.id.switchReceipts).isChecked = settings.receiptsOn
+                    view.findViewById<Switch>(R.id.switchNotifications).isChecked = settings.notificationsOn
+                }
+
+
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+        })
+
+
+
+
 
         view.findViewById<Button>(R.id.btnDeleteAccount).setOnClickListener {
             val input = EditText(requireContext())
@@ -109,12 +152,39 @@ class SettingsFragment : Fragment() {
         }
 
 
+
         view.findViewById<Switch>(R.id.switchDarkMode).setOnCheckedChangeListener { _, isChecked ->
             if (!isChecked) {
-                AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
+                settings.darkModeOn = false
+                ref.setValue(settings)
+                applyDarkMode(settings.darkModeOn)
             }
             else {
-                AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_YES))
+                settings.darkModeOn = true
+                ref.setValue(settings)
+                applyDarkMode(settings.darkModeOn)
+            }
+        }
+
+        view.findViewById<Switch>(R.id.switchNotifications).setOnCheckedChangeListener { _, isChecked ->
+            if (!isChecked) {
+                settings.notificationsOn = false
+                ref.setValue(settings)
+            }
+            else {
+                settings.notificationsOn = true
+                ref.setValue(settings)
+            }
+        }
+
+        view.findViewById<Switch>(R.id.switchReceipts).setOnCheckedChangeListener { _, isChecked ->
+            if (!isChecked) {
+                settings.receiptsOn = false
+                ref.setValue(settings)
+            }
+            else {
+                settings.receiptsOn = true
+                ref.setValue(settings)
             }
         }
     }

@@ -4,6 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.LiveData
 import com.google.firebase.auth.FirebaseAuth
+import com.example.daypilot.ui.settings.UserSettings
+import com.example.daypilot.ui.settings.applyDarkMode
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+
+import com.google.firebase.database.database
 
 class LoginViewModel : ViewModel() {
 
@@ -29,6 +37,22 @@ class LoginViewModel : ViewModel() {
                 val user = auth.currentUser
                 if(user != null && user.isEmailVerified) {
                     _loginSuccess.value = true
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid
+                    val ref = FirebaseDatabase.getInstance().getReference("UserSettings/$uid")
+
+                    ref.addListenerForSingleValueEvent(object: ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            val settings = snapshot.getValue(UserSettings::class.java)
+                            settings?. let {
+                                applyDarkMode(it.darkModeOn)
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+
+                        }
+                    })
+
                 } else {
                     _loginSuccess.value = false
                     _loginError.value = "Email is not verified"
