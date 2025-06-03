@@ -9,6 +9,7 @@ class Init : Application() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
 
+
     }
 
 }

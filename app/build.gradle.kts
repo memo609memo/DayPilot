@@ -25,8 +25,10 @@ android {
         }
     }
     compileOptions {
+        
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+
     }
     kotlinOptions {
         jvmTarget = "1.8"
@@ -38,6 +40,8 @@ android {
 
 dependencies {
 
+
+
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
@@ -48,9 +52,14 @@ dependencies {
     implementation("androidx.navigation:navigation-ui-ktx:2.8.4")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
 
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
 
     implementation("com.google.firebase:firebase-auth:23.2.0")
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+
+
+    implementation ("com.applandeo:material-calendar-view:1.9.0-rc03")
+
 
 
     testImplementation("junit:junit:4.13.2")
