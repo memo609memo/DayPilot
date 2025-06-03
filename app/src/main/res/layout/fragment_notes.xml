@@ -65,6 +65,8 @@
 
 
 
+
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewTasks"
         android:layout_width="411dp"
