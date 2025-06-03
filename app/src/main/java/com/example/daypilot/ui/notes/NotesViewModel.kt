@@ -1,11 +1,11 @@
 package com.example.daypilot.ui.notes
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.applandeo.materialcalendarview.EventDay
 import java.util.Collections.emptyList
-import android.util.Log
 class NotesViewModel : ViewModel() {
    private  val  _selectedDate = MutableLiveData<String>()
    val selectedDate: LiveData<String> = _selectedDate
@@ -45,6 +45,7 @@ class NotesViewModel : ViewModel() {
 
    fun getTasksForDate(date: String){
       currentSelectedDate = date
+      _selectedDate.value = date
       _tasksForSelectedDate.value = taskMap[date]?.toList() ?: emptyList()
    }
 }
