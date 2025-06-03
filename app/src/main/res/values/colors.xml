@@ -12,4 +12,12 @@
     <color name="backgroundColor">#E2DFDA</color>
 
 
+    <color name="toggle_background">#FFC6D2CD</color>
+    <color name="button_background">#FF9FB1AA</color>
+    <color name="screen_background">#FFE2DFDA</color>
+    <color name="dark_toggle_background">#FF41544C</color>
+    <color name="dark_button_background">#FF61736C</color>
+    <color name="dark_screen_background">#FF1A1C1B</color>
+    <color name="text_color">#FF000000</color>
+    <color name="dark_text_color">#FFFFFFFF</color>
 </resources>
