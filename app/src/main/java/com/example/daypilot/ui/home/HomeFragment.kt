@@ -44,7 +44,7 @@ class HomeFragment : Fragment() {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
             startActivity(intent)
         } else {
-            FloatingButton(requireContext())
+            FloatingButton(requireActivity())
         }
 
         return root
