@@ -11,6 +11,8 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.daypilot.databinding.FragmentNotificationsBinding
 import android.app.TimePickerDialog
 import android.graphics.Color.alpha
+import androidx.navigation.fragment.findNavController
+import com.example.daypilot.R
 import java.util.*
 
 class NotificationsFragment : Fragment() {
@@ -39,6 +41,10 @@ class NotificationsFragment : Fragment() {
 
         setupRepeatButtons()
         setupTimePicker()
+
+        binding.settingsButton.setOnClickListener {
+            findNavController().navigate(R.id.action_navigation_notifications_to_settingsFragment)
+        }
 
         return root
     }

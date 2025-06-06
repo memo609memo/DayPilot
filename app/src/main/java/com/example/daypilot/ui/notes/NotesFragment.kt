@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.applandeo.materialcalendarview.EventDay
 import com.applandeo.materialcalendarview.listeners.OnDayClickListener
@@ -34,7 +35,6 @@ class NotesFragment : Fragment() {
     {
         notesViewModel = ViewModelProvider(this).get(NotesViewModel::class.java)
         _binding = FragmentNotesBinding.inflate(inflater,container,false)
-
 
         val root : View = binding.root
 

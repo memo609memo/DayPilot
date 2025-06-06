@@ -61,9 +61,6 @@ class SettingsFragment : Fragment() {
             FirebaseAuth.getInstance().signOut()
             val navController = findNavController()
             navController.setGraph(R.navigation.auth_navigation)
-
-
-
         }
 
         ref.addListenerForSingleValueEvent(object: ValueEventListener {

@@ -31,7 +31,6 @@ class HomeFragment : Fragment() {
         val root: View = binding.root
 
         binding.button.setOnClickListener{
-
             findNavController().navigate(R.id.action_navigation_home_to_settingsFragment)
         }
 
