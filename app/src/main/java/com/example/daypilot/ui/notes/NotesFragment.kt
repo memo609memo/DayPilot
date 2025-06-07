@@ -20,6 +20,8 @@ import com.applandeo.materialcalendarview.listeners.OnDayClickListener
 import com.applandeo.materialcalendarview.listeners.OnDayLongClickListener
 import com.example.daypilot.R
 import com.example.daypilot.databinding.FragmentNotesBinding
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import java.util.Calendar
 
 
@@ -30,6 +32,9 @@ class NotesFragment : Fragment() {
     private lateinit var notesViewModel: NotesViewModel
     private  lateinit var adapter: TaskAdapter
 
+    //Michael: Adding this for realtime DB
+    private val uid = FirebaseAuth.getInstance().currentUser?.uid
+    val ref = FirebaseDatabase.getInstance().getReference("Tasks/$uid")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
     {
@@ -38,7 +43,9 @@ class NotesFragment : Fragment() {
 
         val root : View = binding.root
 
-        adapter = TaskAdapter()
+        adapter = TaskAdapter { clickedTask ->
+            Toast.makeText(requireContext(), "Clicked Task: ${clickedTask.title}", Toast.LENGTH_SHORT).show()
+        }
 
         binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewTasks.adapter = adapter
@@ -134,6 +141,14 @@ class NotesFragment : Fragment() {
                     val task = Task(title = title, description = description, date = date)
                     notesViewModel.addTask(task)
                     notesViewModel.getTasksForDate(date)
+
+
+                    // Michael: Adding storing of tasks to realtime DB
+                    ref.push().setValue(task).addOnFailureListener{ e ->
+                        Toast.makeText(requireContext(),"Could not add task to database", Toast.LENGTH_SHORT).show()}
+
+
+
                 } else {
                     Toast.makeText(requireContext(), "Title is required", Toast.LENGTH_SHORT).show()
                 }
