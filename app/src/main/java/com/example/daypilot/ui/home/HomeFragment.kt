@@ -1,5 +1,6 @@
 package com.example.daypilot.ui.home
 
+
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -35,6 +36,8 @@ class HomeFragment : Fragment() {
             findNavController().navigate(R.id.action_navigation_home_to_settingsFragment)
         }
 
+
+
         val textView: TextView = binding.textHome
         homeViewModel.text.observe(viewLifecycleOwner) {
             textView.text = it
@@ -46,4 +49,9 @@ class HomeFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+
 }
+
+
+

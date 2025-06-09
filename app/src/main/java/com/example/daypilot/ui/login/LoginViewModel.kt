@@ -38,7 +38,7 @@ class LoginViewModel : ViewModel() {
                 if(user != null && user.isEmailVerified) {
                     _loginSuccess.value = true
                     val uid = FirebaseAuth.getInstance().currentUser?.uid
-                    val ref = FirebaseDatabase.getInstance().getReference("UserSettings/$uid")
+                    val ref = FirebaseDatabase.getInstance().getReference("users/$uid/userSettings")
 
                     ref.addListenerForSingleValueEvent(object: ValueEventListener {
                         override fun onDataChange(snapshot: DataSnapshot) {

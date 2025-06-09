@@ -62,7 +62,7 @@ dependencies {
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("com.sendgrid:sendgrid-java:5.0.0-rc.1")
     implementation("com.google.firebase:firebase-database:21.0.0")
-
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
 
     implementation("com.google.firebase:firebase-auth:23.2.0")
