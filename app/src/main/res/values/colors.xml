@@ -10,6 +10,6 @@
     <color name="inputTextBox">#C5D2CD</color>
     <color name="navBarLoginButton">#9DB1AA</color>
     <color name="backgroundColor">#E2DFDA</color>
-
+    <color name="colorAccent">#FF4081</color>
 
 </resources>
