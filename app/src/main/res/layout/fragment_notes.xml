@@ -9,7 +9,7 @@
     android:fitsSystemWindows="true"
     tools:context=".ui.notes.NotesFragment">
 
-    <!-- Toggle Switch Box -->
+
     <LinearLayout
         android:id="@+id/headerToggle"
         android:layout_width="wrap_content"
@@ -42,7 +42,7 @@
             android:layout_height="wrap_content" />
     </LinearLayout>
 
-    <!-- Header Date Text (Week View Only) -->
+
     <TextView
         android:id="@+id/headerDateText"
         android:layout_width="wrap_content"
@@ -60,7 +60,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="8dp" />
 
-    <!-- Container for Both Calendars -->
+
     <FrameLayout
         android:id="@+id/calendarContainer"
         android:layout_width="0dp"
@@ -71,17 +71,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Full Month Calendar -->
-        <com.applandeo.materialcalendarview.CalendarView
-            android:id="@+id/calendarView"
+
+        <com.kizitonwose.calendar.view.CalendarView
+            android:id="@+id/monthCalendarView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="visible"
-            app:anotherMonthsDaysLabelsColor="@color/white"
-            app:daysLabelsColor="@color/black"
-            app:headerColor="@color/inputTextBox"
-            app:pagesColor="@color/white"
-            app:type="one_day_picker" />
+            android:background="@color/white"
+            app:cv_dayViewResource="@layout/calendar_day_layout" />
 
         <!-- Weekly Calendar -->
         <com.kizitonwose.calendar.view.WeekCalendarView
