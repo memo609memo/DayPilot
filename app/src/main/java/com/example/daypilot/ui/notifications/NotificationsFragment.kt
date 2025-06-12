@@ -1,6 +1,6 @@
 package com.example.daypilot.ui.notifications
 
-import android.graphics.Color
+import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,12 +8,9 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import com.example.daypilot.databinding.FragmentNotificationsBinding
-import android.app.TimePickerDialog
-import android.graphics.Color.alpha
 import androidx.navigation.fragment.findNavController
 import com.example.daypilot.R
-import java.util.*
+import com.example.daypilot.databinding.FragmentNotificationsBinding
 
 class NotificationsFragment : Fragment() {
 
@@ -39,12 +36,14 @@ class NotificationsFragment : Fragment() {
         _binding = FragmentNotificationsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
+
         setupRepeatButtons()
         setupTimePicker()
 
         binding.settingsButton.setOnClickListener {
             findNavController().navigate(R.id.action_navigation_notifications_to_settingsFragment)
         }
+
 
         return root
     }

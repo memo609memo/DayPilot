@@ -10,7 +10,7 @@
     <color name="inputTextBox">#C5D2CD</color>
     <color name="navBarLoginButton">#9DB1AA</color>
     <color name="backgroundColor">#E2DFDA</color>
-
+    <color name="colorAccent">#FF4081</color>
 
     <color name="toggle_background">#FFC6D2CD</color>
     <color name="button_background">#FF9FB1AA</color>
