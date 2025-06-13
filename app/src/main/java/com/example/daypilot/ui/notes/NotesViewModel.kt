@@ -46,4 +46,26 @@ class NotesViewModel : ViewModel() {
       _selectedDate.value = date
       _tasksForSelectedDate.value = taskMap[date]?.toList() ?: emptyList()
    }
+
+   fun deleteTask(task: Task) {
+      taskMap[task.date]?.remove(task)
+      if (currentSelectedDate == task.date) {
+         _tasksForSelectedDate.value = taskMap[task.date]?.toList() ?: emptyList()
+      }
+   }
+
+   fun updateTask(updatedTask: Task) {
+      val tasksForDate = taskMap[updatedTask.date]
+      if (tasksForDate != null) {
+         val index = tasksForDate.indexOfFirst { it.id == updatedTask.id }
+         if (index != -1) {
+            tasksForDate[index] = updatedTask
+            if (currentSelectedDate == updatedTask.date) {
+               _tasksForSelectedDate.value = tasksForDate.toList()
+            }
+         }
+      }
+   }
+
+
 }

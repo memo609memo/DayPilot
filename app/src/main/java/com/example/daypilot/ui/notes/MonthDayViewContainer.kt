@@ -9,45 +9,37 @@ import com.kizitonwose.calendar.view.ViewContainer
 
 class MonthDayViewContainer(view: View) : ViewContainer(view) {
 
-    val textView: TextView = view.findViewById(R.id.textViewDayNumber)
-    val selectedView: View = view.findViewById(R.id.selectedBackground)
+    val dayNumberText: TextView = view.findViewById(R.id.textViewDayNumber)
+    val selectedBackground: View = view.findViewById(R.id.selectedBackground)
     val eventDot: View = view.findViewById(R.id.eventDot)
 
     lateinit var day: CalendarDay
 
-    // Optional: helper function to bind UI with day state
     fun bind(
+        newDay: CalendarDay,
         selectedDate: CalendarDay?,
         today: CalendarDay?,
         hasEvent: Boolean,
         onClick: (CalendarDay) -> Unit
     ) {
-        day = day
-
+        day = newDay
         val date = day.date
         val isSelected = selectedDate?.date == date
         val isToday = today?.date == date
 
-        textView.text = date.dayOfMonth.toString()
+        dayNumberText.text = date.dayOfMonth.toString()
 
-        selectedView.visibility = if (isSelected) View.VISIBLE else View.GONE
+        selectedBackground.visibility = if (isSelected) View.VISIBLE else View.GONE
         eventDot.visibility = if (hasEvent) View.VISIBLE else View.GONE
 
-
-        when {
-            isSelected -> {
-                textView.setTextColor(ContextCompat.getColor(view.context, android.R.color.white))
-                textView.setTypeface(null, Typeface.BOLD)
+        dayNumberText.setTextColor(
+            when {
+                isSelected -> ContextCompat.getColor(view.context, android.R.color.white)
+                isToday -> ContextCompat.getColor(view.context, R.color.purple_500)
+                else -> ContextCompat.getColor(view.context, android.R.color.black)
             }
-            isToday -> {
-                textView.setTextColor(ContextCompat.getColor(view.context, R.color.purple_500))
-                textView.setTypeface(null, Typeface.BOLD)
-            }
-            else -> {
-                textView.setTextColor(ContextCompat.getColor(view.context, android.R.color.black))
-                textView.setTypeface(null, Typeface.NORMAL)
-            }
-        }
+        )
+        dayNumberText.setTypeface(null, if (isSelected || isToday) Typeface.BOLD else Typeface.NORMAL)
 
         view.setOnClickListener {
             onClick(day)
