@@ -1,15 +1,8 @@
 package com.example.daypilot.ui.settings
 
-import android.app.AlarmManager
 import android.app.AlertDialog
-import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
-
 import android.os.Bundle
-import android.provider.Settings
 import android.text.InputType
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -22,9 +15,6 @@ import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.fragment.findNavController
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.daypilot.R
 import com.google.firebase.auth.FirebaseAuth
 import org.json.JSONArray
@@ -36,8 +26,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import java.util.Calendar
-import java.util.concurrent.TimeUnit
+import com.example.daypilot.SplashActivity
 
 
 val appEmail = "app.daypilot@gmail.com"
@@ -46,10 +35,6 @@ val userEmail = FirebaseAuth.getInstance().currentUser?.email
 val API_Key = BuildConfig.SENDGRID_API_KEY
 
 var settings = UserSettings()
-
-
-val uid = FirebaseAuth.getInstance().currentUser?.uid
-val ref = FirebaseDatabase.getInstance().getReference("users/$uid/userSettings")
 
 var darkMode = false
 var notifications = false
@@ -69,13 +54,17 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val ref = FirebaseDatabase.getInstance().getReference("users/$uid/userSettings")
+
         view.findViewById<Button>(R.id.btnLogout).setOnClickListener {
+
             FirebaseAuth.getInstance().signOut()
-            val navController = findNavController()
-            navController.setGraph(R.navigation.auth_navigation)
 
-
-
+            val intent = Intent(requireContext(), SplashActivity::class.java)
+            AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
+            startActivity(intent)
+            requireActivity().finish()
         }
 
         ref.addListenerForSingleValueEvent(object: ValueEventListener {
@@ -126,8 +115,10 @@ class SettingsFragment : Fragment() {
                 if (userInput == "DELETE") {
                     alertDialog.dismiss()
                     FirebaseAuth.getInstance().currentUser?.delete()
-                    val navController = findNavController()
-                    navController.setGraph(R.navigation.auth_navigation)
+                    val intent = Intent(requireContext(), SplashActivity::class.java)
+                    AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
+                    startActivity(intent)
+                    requireActivity().finish()
                 } else {
                     Toast.makeText(requireContext(), "Please type DELETE to confirm the deletion of your account.", Toast.LENGTH_SHORT).show()
                 }
@@ -193,13 +184,10 @@ class SettingsFragment : Fragment() {
             if (!isChecked) {
                 settings.receiptsOn = false
                 ref.setValue(settings)
-                cancelWeeklyAlarm(requireContext())
             }
             else {
                 settings.receiptsOn = true
                 ref.setValue(settings)
-                requestExactAlarmPermission(requireContext())
-                scheduleWeeklyAlarm(requireContext())
             }
         }
     }
@@ -296,70 +284,6 @@ fun sendEmailToUser(problem: String) {
     }
     thread.start()
 }
-
-fun scheduleWeeklyAlarm(context: Context) {
-
-    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-    val intent = Intent(context, EmailAlarmReceiver::class.java)
-    val pendingIntent = PendingIntent.getBroadcast(
-        context, 0, intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
-    val calendar = Calendar.getInstance().apply {
-        set(Calendar.DAY_OF_WEEK, Calendar.FRIDAY)
-        set(Calendar.HOUR_OF_DAY, 18)
-        set(Calendar.MINUTE, 54)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }
-
-    if (calendar.timeInMillis <= System.currentTimeMillis()) {
-        calendar.add(Calendar.WEEK_OF_YEAR, 1)
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        if ((alarmManager as AlarmManager).canScheduleExactAlarms()) {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,
-                pendingIntent
-            )
-        }
-    }
-    else {
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            pendingIntent
-        )
-    }
-}
-
-fun cancelWeeklyAlarm(context: Context) {
-    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    val intent = Intent(context, EmailAlarmReceiver::class.java)
-    val pendingIntent = PendingIntent.getBroadcast(
-        context, 0, intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-    alarmManager.cancel(pendingIntent)
-}
-
-fun requestExactAlarmPermission(context: Context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (!alarmManager.canScheduleExactAlarms()) {
-            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                data = Uri.parse("package:${context.packageName}")
-            }
-            context.startActivity(intent)
-        }
-    }
-}
-
-
 
 
 
