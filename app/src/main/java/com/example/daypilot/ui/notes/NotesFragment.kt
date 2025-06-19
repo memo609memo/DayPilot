@@ -24,6 +24,10 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
+import java.util.Calendar
+
 
 class NotesFragment : Fragment() {
 
@@ -38,14 +42,26 @@ class NotesFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+    //Michael: Adding this for realtime DB
+    private val uid = FirebaseAuth.getInstance().currentUser?.uid
+    val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
+    {
         notesViewModel = ViewModelProvider(this).get(NotesViewModel::class.java)
 
         _binding = FragmentNotesBinding.inflate(inflater, container, false)
         val root = binding.root
 
 
-        // Setup RecyclerView and adapter for tasks
-        adapter = TaskAdapter()
+        adapter = TaskAdapter { clickedTask ->
+            Toast.makeText(requireContext(), "Clicked Task: ${clickedTask.title}", Toast.LENGTH_SHORT).show()
+            val bundle = Bundle().apply {
+                putString("taskId", clickedTask.id)
+            }
+            findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
+        }
+
         binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewTasks.adapter = adapter
 
@@ -259,11 +275,18 @@ class NotesFragment : Fragment() {
                 val title = titleInput.text.toString()
                 val description = descriptionInput.text.toString()
                 if (title.isNotBlank()) {
-                    val task = Task(title = title, description = description, date = date)
-
+                    //Michael: Moving the id creation to here from Task.kt so firebase serializing works correctly
+                    val task = Task(id = System.currentTimeMillis().toString(), title = title, description = description, date = date)
                     notesViewModel.addTask(task)
-
                     notesViewModel.getTasksForDate(date)
+
+
+                    // Michael: Adding storing of tasks to realtime DB
+                    ref.push().setValue(task).addOnFailureListener{ e ->
+                        Toast.makeText(requireContext(),"Could not add task to database", Toast.LENGTH_SHORT).show()}
+
+
+
                 } else {
                     Toast.makeText(requireContext(), "Title is required", Toast.LENGTH_SHORT).show()
                 }

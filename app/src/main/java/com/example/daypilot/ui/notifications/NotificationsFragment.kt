@@ -1,6 +1,6 @@
 package com.example.daypilot.ui.notifications
 
-import android.app.TimePickerDialog
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,11 +8,22 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.example.daypilot.databinding.FragmentNotificationsBinding
+import android.app.TimePickerDialog
+import android.graphics.Color.alpha
 import androidx.navigation.fragment.findNavController
 import com.example.daypilot.R
-import com.example.daypilot.databinding.FragmentNotificationsBinding
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import java.util.*
+import com.example.daypilot.ui.notes.Task
+import android.util.Log
 
 class NotificationsFragment : Fragment() {
+
 
     private val repeatToggles = MutableList(7) { false }
     private var selectedStartHour: Int = -1
@@ -35,14 +46,22 @@ class NotificationsFragment : Fragment() {
 
         _binding = FragmentNotificationsBinding.inflate(inflater, container, false)
         val root: View = binding.root
-
+        val taskId = arguments?.getString("taskId")
 
         setupRepeatButtons()
         setupTimePicker()
+        taskId?.let { getTaskDataFromFirebase(it)}
 
-        binding.settingsButton.setOnClickListener {
-            findNavController().navigate(R.id.action_navigation_notifications_to_settingsFragment)
+        //save button section
+        binding.saveButton.setOnClickListener {
+            val newTitle = binding.editTaskName.text.toString()
+            val updatedDescription = binding.noteBody.text.toString()
+            if (taskId != null) {
+                updateTaskInFirebase(taskId, newTitle, updatedDescription)
+            }
         }
+
+
 
 
         return root
@@ -125,5 +144,57 @@ class NotificationsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun getTaskDataFromFirebase(taskId: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+
+        ref.orderByChild("id").equalTo(taskId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for(taskSnapshot in snapshot.children) {
+                        val task = taskSnapshot.getValue(Task::class.java)
+                        if (task != null) {
+                            binding.editTaskName.setText(task.title)
+                            binding.noteBody.setText(task.description)
+                            break
+                        }
+                    }
+                   }
+
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Error", error.message)
+                }
+            })
+    }
+
+
+
+    //Don't forget to add in Time Start + Time End
+    //Also need to add Repeat section when that is done
+    //Luis will also need to add the logic for saving the date in here!
+    private fun updateTaskInFirebase(taskId: String, newTitle: String, newDescription: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+
+        ref.orderByChild("id").equalTo(taskId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for(taskSnapshot in snapshot.children) {
+                        val updates = mapOf<String, Any>(
+                            "title" to newTitle,
+                            "description" to newDescription
+                        )
+                        taskSnapshot.ref.updateChildren(updates)
+                        break
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Error", error.message)
+                }
+            })
     }
 }

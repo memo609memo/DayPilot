@@ -7,11 +7,16 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.daypilot.databinding.ItemTaskBinding
 
+class TaskAdapter(private val onItemClicked: (Task) -> Unit) : ListAdapter<Task, TaskAdapter.TaskViewHolder>(DiffCallBack()){
 
+    class  TaskViewHolder(val binding: ItemTaskBinding) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(task: Task, onItemClicked: (Task) -> Unit) {
+            binding.textViewTitle.text = task.title
+            binding.textViewDescription.text = task.description
+            itemView.setOnClickListener { onItemClicked(task) }
+        }
+    }
 
-class TaskAdapter : ListAdapter<Task, TaskAdapter.TaskViewHolder>(DiffCallBack()){
-
-    class  TaskViewHolder(val binding: ItemTaskBinding) : RecyclerView.ViewHolder(binding.root)
 
     class DiffCallBack : DiffUtil.ItemCallback<Task>(){
 
@@ -30,8 +35,8 @@ class TaskAdapter : ListAdapter<Task, TaskAdapter.TaskViewHolder>(DiffCallBack()
 
     override fun onBindViewHolder(holder: TaskViewHolder, position: Int) {
         val task = getItem(position)
-        holder.binding.textViewTitle.text = task.title
-        holder.binding.textViewDescription.text = task.description
+
+        holder.bind(task, onItemClicked)
     }
 
 }
