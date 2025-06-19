@@ -40,9 +40,7 @@ class NotesFragment : Fragment() {
     ): View? {
         notesViewModel = ViewModelProvider(this).get(NotesViewModel::class.java)
 
-        _binding = FragmentNotesBinding.inflate(inflater,container,false)
 
-        val root : View = binding.root
 
 
         // Setup RecyclerView and adapter for tasks
