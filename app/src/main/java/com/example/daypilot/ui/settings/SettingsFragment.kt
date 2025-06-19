@@ -1,7 +1,7 @@
 package com.example.daypilot.ui.settings
 
 import android.app.AlertDialog
-
+import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
@@ -26,6 +26,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.example.daypilot.SplashActivity
 
 
 val appEmail = "app.daypilot@gmail.com"
@@ -34,10 +35,6 @@ val userEmail = FirebaseAuth.getInstance().currentUser?.email
 val API_Key = BuildConfig.SENDGRID_API_KEY
 
 var settings = UserSettings()
-
-
-val uid = FirebaseAuth.getInstance().currentUser?.uid
-val ref = FirebaseDatabase.getInstance().getReference("UserSettings/$uid")
 
 var darkMode = false
 var notifications = false
@@ -57,10 +54,17 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val ref = FirebaseDatabase.getInstance().getReference("users/$uid/userSettings")
+
         view.findViewById<Button>(R.id.btnLogout).setOnClickListener {
+
             FirebaseAuth.getInstance().signOut()
-            val navController = findNavController()
-            navController.setGraph(R.navigation.auth_navigation)
+
+            val intent = Intent(requireContext(), SplashActivity::class.java)
+            AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
+            startActivity(intent)
+            requireActivity().finish()
         }
 
         ref.addListenerForSingleValueEvent(object: ValueEventListener {
@@ -111,8 +115,10 @@ class SettingsFragment : Fragment() {
                 if (userInput == "DELETE") {
                     alertDialog.dismiss()
                     FirebaseAuth.getInstance().currentUser?.delete()
-                    val navController = findNavController()
-                    navController.setGraph(R.navigation.auth_navigation)
+                    val intent = Intent(requireContext(), SplashActivity::class.java)
+                    AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
+                    startActivity(intent)
+                    requireActivity().finish()
                 } else {
                     Toast.makeText(requireContext(), "Please type DELETE to confirm the deletion of your account.", Toast.LENGTH_SHORT).show()
                 }
@@ -226,6 +232,10 @@ fun sendEmailToApp(problem: String) {
             output.flush()
             output.close()
 
+            val responseCode = conn.responseCode
+            val responseMessage = conn.responseMessage
+            Log.d("SendGrid", "Response Code: $responseCode, Message: $responseMessage")
+
         } catch (e: Exception) {
             Log.e("SendGrid", "Failed to send email: ${e.message}", e)
         }
@@ -267,15 +277,13 @@ fun sendEmailToUser(problem: String) {
             output.write(json.toString().toByteArray())
             output.flush()
             output.close()
+
         } catch (e: Exception) {
             Log.e("SendGridUser", "Failed to send email: ${e.message}", e)
         }
     }
     thread.start()
 }
-
-
-
 
 
 
