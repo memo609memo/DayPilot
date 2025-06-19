@@ -1,5 +1,4 @@
 import java.util.Properties
-import java.io.File
 
 plugins {
     id("com.android.application")
@@ -35,11 +34,11 @@ android {
         }
     }
     compileOptions {
-<<<<<<< HEAD
 
-=======
+
+
         isCoreLibraryDesugaringEnabled = true
->>>>>>> 795f85e (Weekview integrated, the witch button now switches to a weekview calendar style, Kizintwse library added for this. Logic to add a red dot whenever a task is added to a day)
+
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
 
@@ -55,11 +54,9 @@ android {
 
 dependencies {
 
-<<<<<<< HEAD
-=======
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
->>>>>>> 795f85e (Weekview integrated, the witch button now switches to a weekview calendar style, Kizintwse library added for this. Logic to add a red dot whenever a task is added to a day)
+
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
