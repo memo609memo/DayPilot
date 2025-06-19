@@ -10,11 +10,6 @@
             android:id="@+id/navigation_dashboard"
             android:icon="@android:drawable/ic_menu_my_calendar"
             android:title="@string/title_calendar"/>
-
-    <item
-            android:id="@+id/navigation_notifications"
-            android:icon="@android:drawable/ic_menu_day"
-            android:title="@string/title_dayview"/>
     <item
             android:id="@+id/navigation_notes"
         android:icon="@android:drawable/ic_menu_edit"

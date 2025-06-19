@@ -34,7 +34,7 @@ class NotesFragment : Fragment() {
 
     //Michael: Adding this for realtime DB
     private val uid = FirebaseAuth.getInstance().currentUser?.uid
-    val ref = FirebaseDatabase.getInstance().getReference("Tasks/$uid")
+    val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
     {
@@ -45,6 +45,10 @@ class NotesFragment : Fragment() {
 
         adapter = TaskAdapter { clickedTask ->
             Toast.makeText(requireContext(), "Clicked Task: ${clickedTask.title}", Toast.LENGTH_SHORT).show()
+            val bundle = Bundle().apply {
+                putString("taskId", clickedTask.id)
+            }
+            findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
         }
 
         binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
@@ -138,7 +142,8 @@ class NotesFragment : Fragment() {
                 val title = titleInput.text.toString()
                 val description = descriptionInput.text.toString()
                 if (title.isNotBlank()) {
-                    val task = Task(title = title, description = description, date = date)
+                    //Michael: Moving the id creation to here from Task.kt so firebase serializing works correctly
+                    val task = Task(id = System.currentTimeMillis().toString(), title = title, description = description, date = date)
                     notesViewModel.addTask(task)
                     notesViewModel.getTasksForDate(date)
 

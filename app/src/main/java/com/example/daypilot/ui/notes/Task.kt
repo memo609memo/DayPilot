@@ -1,7 +1,7 @@
 package com.example.daypilot.ui.notes
 import java.io.Serializable
-data class Task(  val id: String = System.currentTimeMillis().toString(),
-                  val title: String,
+data class Task(  val id: String = "",
+                  val title: String = "",
                   val description: String = "",
-                  val date: String,
+                  val date: String = "",
     ): Serializable
