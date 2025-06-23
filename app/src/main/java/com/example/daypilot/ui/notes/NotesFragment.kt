@@ -12,10 +12,13 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.daypilot.R
 import com.example.daypilot.databinding.FragmentNotesBinding
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.daysOfWeek
@@ -24,9 +27,6 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
-import java.util.Calendar
 
 
 class NotesFragment : Fragment() {
@@ -37,11 +37,7 @@ class NotesFragment : Fragment() {
     private  lateinit var adapter: TaskAdapter
 
     private var selectedLocalDate: LocalDate = LocalDate.now()
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+
     //Michael: Adding this for realtime DB
     private val uid = FirebaseAuth.getInstance().currentUser?.uid
     val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
@@ -76,7 +72,12 @@ class NotesFragment : Fragment() {
             onDelete = { position ->
                 val task = adapter.currentList[position]
                 notesViewModel.deleteTask(task)
+
+                //Reload tasks and refresh the red dot for that date
                 notesViewModel.getTasksForDate(task.date)
+                val date = LocalDate.parse(task.date)
+                binding.monthCalendarView.notifyDateChanged(date)
+                binding.weekCalendarView.notifyDateChanged(date)
             }
         )
         ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.recyclerViewTasks)
@@ -84,6 +85,12 @@ class NotesFragment : Fragment() {
         // Observe tasks for selected date to update RecyclerView
         notesViewModel.tasksForSelectedDate.observe(viewLifecycleOwner) { tasks ->
             adapter.submitList(tasks)
+            binding.textViewNoTasks.visibility = if (tasks.isEmpty()) View.VISIBLE else View.GONE
+        }
+
+        notesViewModel.preloadAllTasks{
+            binding.monthCalendarView.notifyCalendarChanged()
+            binding.weekCalendarView.notifyCalendarChanged()
         }
 
         // Setup initial dates
@@ -234,6 +241,7 @@ class NotesFragment : Fragment() {
                 binding.monthWeekdayLabels.visibility = View.GONE
                 binding.headerDateText.visibility = View.VISIBLE
                 binding.monthNavigation.visibility = View.GONE
+                binding.textViewToggleLabel.text ="Monthly View:"
             } else {
                 // Switch to month view
                 binding.monthCalendarView.visibility = View.VISIBLE
@@ -241,6 +249,7 @@ class NotesFragment : Fragment() {
                 binding.monthWeekdayLabels.visibility = View.VISIBLE
                 binding.headerDateText.visibility = View.GONE
                 binding.monthNavigation.visibility = View.VISIBLE
+                binding.textViewToggleLabel.text ="Weekly View:"
             }
         }
 
@@ -258,7 +267,9 @@ class NotesFragment : Fragment() {
                 Toast.makeText(requireContext(), "Please select a date first", Toast.LENGTH_SHORT).show()
             }
         }
-
+        val initiallySelectedDate = selectedLocalDate.toString()
+        notesViewModel.selectedDate(initiallySelectedDate)
+        notesViewModel.getTasksForDate(initiallySelectedDate)
         return root
     }
 
@@ -295,7 +306,7 @@ class NotesFragment : Fragment() {
             .show()
     }
 
-    private fun showEditTaskDialog(task: Task) {
+        private fun showEditTaskDialog(task: Task) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
         val titleInput = dialogView.findViewById<EditText>(R.id.editTextTitle)
         val descriptionInput = dialogView.findViewById<EditText>(R.id.editTextDescription)
