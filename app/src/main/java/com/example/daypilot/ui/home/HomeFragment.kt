@@ -9,14 +9,14 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.example.daypilot.databinding.FragmentHomeBinding
 import android.provider.Settings
 import androidx.activity.viewModels
 import androidx.fragment.app.viewModels
 import com.example.daypilot.data.TaskRepo
 import com.example.daypilot.ui.floatingbutton.FloatingButton
-
-
+import com.example.daypilot.R
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
@@ -24,7 +24,7 @@ class HomeFragment : Fragment() {
     private val homeViewModelFactory = HomeViewModelFactory(taskRepo)
     private val homeViewModel: HomeViewModel by viewModels { homeViewModelFactory }
 
-    // This is only valid between onCreateView and
+    // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
 
@@ -33,8 +33,17 @@ class HomeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        val homeViewModel =
+            ViewModelProvider(this).get(HomeViewModel::class.java)
+
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val root: View = binding.root
+
+        binding.button.setOnClickListener{
+            findNavController().navigate(R.id.action_navigation_home_to_settingsFragment)
+        }
+
+
 
         val textView: TextView = binding.textHome
         homeViewModel.text.observe(viewLifecycleOwner) {

@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import android.util.Log
+import com.google.firebase.database.FirebaseDatabase
 
 class RegisterViewModel : ViewModel() {
 
@@ -26,10 +27,31 @@ class RegisterViewModel : ViewModel() {
 
                 val user = auth.currentUser
 
+                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@addOnCompleteListener
+                val userEmail = FirebaseAuth.getInstance().currentUser?.email
+
+                val userRef = FirebaseDatabase.getInstance().getReference("users").child(uid)
+
+                val userSettings = mapOf(
+                    "darkModeOn" to false,
+                    "notificationsOn" to false,
+                    "receiptsOn" to false
+                )
+
+                val userData = mapOf(
+                    "email" to userEmail,
+                    "userSettings" to userSettings,
+                    "tasks" to null
+                )
+
+                userRef.setValue(userData)
+
                 user?.sendEmailVerification()
                     ?.addOnCompleteListener { task ->
                         if (task.isSuccessful) {
                             _registerSuccess.value = true
+
+
                         } else {
                             _registerError.value = "Email verification failed"
                         }
