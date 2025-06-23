@@ -12,14 +12,15 @@ import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.Toast
+import com.example.daypilot.MainActivity
 import com.example.daypilot.R
+
+// Do in need the code to req permission
+// do mic in xml ?
 
 class FloatingButton(private val activity: Activity) {
 
-    companion object {
-        // code for startActivityForResult
-        private const val REQ_SPEECH = 1001
-    }
+
 
     // Get  WindowManager from the activity
     private val windowManager =
@@ -77,7 +78,7 @@ class FloatingButton(private val activity: Activity) {
             )
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now…")
         }
-        activity.startActivityForResult(intent, REQ_SPEECH)
+        activity.startActivityForResult(intent, MainActivity.REQ_SPEECH)
     }
 
     private inner class DragOrClickListener(val view: View) : View.OnTouchListener {

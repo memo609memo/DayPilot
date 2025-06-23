@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.view.View
+import androidx.activity.viewModels
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -14,14 +15,22 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.daypilot.databinding.ActivityMainBinding
 import com.google.firebase.FirebaseApp
 import androidx.navigation.fragment.findNavController
+import com.example.daypilot.data.TaskRepo
+import com.example.daypilot.ui.home.HomeViewModel
+import com.example.daypilot.ui.home.HomeViewModelFactory
 
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
+    private val taskRepo = TaskRepo()
+    private val homeViewModelFactory = HomeViewModelFactory(taskRepo)
+    private val homeViewModel: HomeViewModel by viewModels { homeViewModelFactory }
+
+
     companion object {
-        private const val REQ_SPEECH = 1234
+        const val REQ_SPEECH = 1234
     }
 
     // must be public, take a View
@@ -40,7 +49,18 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQ_SPEECH && resultCode == Activity.RESULT_OK) {
-            // text here
+
+            // making sure our result data is a string
+            val matches: ArrayList<String>? =
+                data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+
+            // spoken text is going to our spoken text, the built in translator spits a few
+            val spokenTextAbu = matches?.firstOrNull() ?: return
+
+            // store it in  ViewModel
+            homeViewModel.onNewSpeechText(spokenTextAbu)
+            // send to python
+            homeViewModel.sendTextToAi(spokenTextAbu)
         }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
