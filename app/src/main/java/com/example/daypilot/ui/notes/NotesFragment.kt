@@ -27,7 +27,7 @@ import java.util.Locale
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import java.util.Calendar
-
+import androidx.navigation.fragment.findNavController
 
 class NotesFragment : Fragment() {
 
@@ -37,11 +37,7 @@ class NotesFragment : Fragment() {
     private  lateinit var adapter: TaskAdapter
 
     private var selectedLocalDate: LocalDate = LocalDate.now()
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+
     //Michael: Adding this for realtime DB
     private val uid = FirebaseAuth.getInstance().currentUser?.uid
     val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
