@@ -34,14 +34,27 @@ class NotesViewModel : ViewModel() {
 
 
    fun addTask(task: Task) {
-      ref.child(task.id).setValue(task).addOnSuccessListener {
-         if(currentSelectedDate== task.date){
-            getTasksForDate(task.date)
-         }
-      }
-         .addOnFailureListener{
-            Log.e("Firebase","Failed to add task: ${it.message}")
-         }
+      ref.orderByChild("id").equalTo(task.id)
+         .addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+               // If task with same ID already exists, don't add it again
+               if (!snapshot.exists()) {
+                  ref.push().setValue(task).addOnSuccessListener {
+                     if (currentSelectedDate == task.date) {
+                        getTasksForDate(task.date)
+                     }
+                  }.addOnFailureListener {
+                     Log.e("Firebase", "Failed to add task: ${it.message}")
+                  }
+               } else {
+                  Log.d("Firebase", "Task with id ${task.id} already exists. Skipping add.")
+               }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+               Log.e("Firebase", "addTask check failed: ${error.message}")
+            }
+         })
    }
    fun hasTasksForDate(date: String): Boolean {
       return taskMap[date]?.isNotEmpty() == true

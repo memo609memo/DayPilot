@@ -273,6 +273,15 @@ class NotesFragment : Fragment() {
         return root
     }
 
+    override fun onResume() {
+        super.onResume()
+        val selected = notesViewModel.selectedDate.value
+        if (selected != null) {
+            notesViewModel.getTasksForDate(selected)
+            binding.monthCalendarView.notifyDateChanged(LocalDate.parse(selected))
+            binding.weekCalendarView.notifyDateChanged(LocalDate.parse(selected))
+        }
+    }
 
     private fun showAddTaskDialog(date: String) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
