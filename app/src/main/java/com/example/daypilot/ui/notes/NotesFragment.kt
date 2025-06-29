@@ -12,6 +12,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.daypilot.R
@@ -37,11 +38,7 @@ class NotesFragment : Fragment() {
     private  lateinit var adapter: TaskAdapter
 
     private var selectedLocalDate: LocalDate = LocalDate.now()
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+
     //Michael: Adding this for realtime DB
     private val uid = FirebaseAuth.getInstance().currentUser?.uid
     val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")

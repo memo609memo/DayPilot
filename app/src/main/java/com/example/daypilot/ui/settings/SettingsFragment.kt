@@ -1,8 +1,15 @@
 package com.example.daypilot.ui.settings
 
+import android.Manifest
+import android.app.AlarmManager
 import android.app.AlertDialog
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.InputType
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -13,7 +20,12 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Switch
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.navigation.fragment.findNavController
 import com.example.daypilot.R
 import com.google.firebase.auth.FirebaseAuth
@@ -27,6 +39,9 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.example.daypilot.SplashActivity
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 
 val appEmail = "app.daypilot@gmail.com"
@@ -51,11 +66,13 @@ class SettingsFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_settings, container, false)
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         val ref = FirebaseDatabase.getInstance().getReference("users/$uid/userSettings")
+
 
         view.findViewById<Button>(R.id.btnLogout).setOnClickListener {
 
@@ -177,6 +194,7 @@ class SettingsFragment : Fragment() {
             else {
                 settings.notificationsOn = true
                 ref.setValue(settings)
+                checkNotificationPermissions(requireContext())
             }
         }
 
@@ -283,6 +301,44 @@ fun sendEmailToUser(problem: String) {
         }
     }
     thread.start()
+}
+
+fun checkNotificationPermissions(context: Context) : Boolean {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val isEnabled = notificationManager.areNotificationsEnabled()
+
+        if (!isEnabled) {
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            context.startActivity(intent)
+
+            return false
+
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                context.startActivity(intent)
+            }
+        }
+    } else {
+        val areEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+
+        if (!areEnabled) {
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            context.startActivity(intent)
+
+            return false
+        }
+    }
+
+    return true
 }
 
 
