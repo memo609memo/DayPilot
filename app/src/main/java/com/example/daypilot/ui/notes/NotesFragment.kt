@@ -13,7 +13,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.daypilot.R
 import com.example.daypilot.databinding.FragmentNotesBinding
@@ -35,7 +34,7 @@ class NotesFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var notesViewModel: NotesViewModel
     private  lateinit var adapter: TaskAdapter
-
+    private lateinit var hourBlockAdapter: HourBlockAdapter
     private var selectedLocalDate: LocalDate = LocalDate.now()
 
     //Michael: Adding this for realtime DB
@@ -58,11 +57,17 @@ class NotesFragment : Fragment() {
             findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
         }
 
+        hourBlockAdapter = HourBlockAdapter { clickedTask ->
+            val bundle = Bundle().apply {
+                putString("taskId", clickedTask.id)
+            }
+            findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
+        }
         binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerViewTasks.adapter = adapter
+        binding.recyclerViewTasks.adapter = hourBlockAdapter
 
         // Attach swipe callback
-        val swipeCallback = SwipeToActionCallback(
+       /*val swipeCallback = SwipeToActionCallback(
             requireContext(),
             adapter,
             onEdit = { position ->
@@ -79,14 +84,19 @@ class NotesFragment : Fragment() {
                 binding.monthCalendarView.notifyDateChanged(date)
                 binding.weekCalendarView.notifyDateChanged(date)
             }
-        )
-        ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.recyclerViewTasks)
+        )*/
+        //ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.recyclerViewTasks)
 
         // Observe tasks for selected date to update RecyclerView
         notesViewModel.tasksForSelectedDate.observe(viewLifecycleOwner) { tasks ->
-            adapter.submitList(tasks)
+            //adapter.submitList(tasks)
             binding.textViewNoTasks.visibility = if (tasks.isEmpty()) View.VISIBLE else View.GONE
+            val hourBlocks = notesViewModel.buildHourBlocksFromTasks(tasks)
+
+            hourBlockAdapter.submitList(hourBlocks)
         }
+
+
 
         notesViewModel.preloadAllTasks{
             binding.monthCalendarView.notifyCalendarChanged()
@@ -273,15 +283,6 @@ class NotesFragment : Fragment() {
         return root
     }
 
-    override fun onResume() {
-        super.onResume()
-        val selected = notesViewModel.selectedDate.value
-        if (selected != null) {
-            notesViewModel.getTasksForDate(selected)
-            binding.monthCalendarView.notifyDateChanged(LocalDate.parse(selected))
-            binding.weekCalendarView.notifyDateChanged(LocalDate.parse(selected))
-        }
-    }
 
     private fun showAddTaskDialog(date: String) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)

@@ -155,7 +155,18 @@ class NotesViewModel : ViewModel() {
          }
       })
    }
+   fun buildHourBlocksFromTasks(tasks: List<Task>): List<HourBlock> {
+      val hourBlocks = (-1..23).map { HourBlock(it) }.toMutableList()
+
+      for (task in tasks) {
+         val hour = task.startTime.take(2).toIntOrNull() ?: 0 // fallback to 0 AM
+         hourBlocks.find { it.hour == hour }?.tasks?.add(task)
+      }
+
+      return hourBlocks
+   }
+
+   }
 
 
 
-}
