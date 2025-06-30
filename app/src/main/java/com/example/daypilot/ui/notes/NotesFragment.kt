@@ -1,11 +1,13 @@
 package com.example.daypilot.ui.notes
 
 
+import android.app.TimePickerDialog
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -25,6 +27,7 @@ import com.kizitonwose.calendar.view.MonthDayBinder
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import java.util.Locale
 
 
@@ -57,12 +60,22 @@ class NotesFragment : Fragment() {
             findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
         }
 
-        hourBlockAdapter = HourBlockAdapter { clickedTask ->
-            val bundle = Bundle().apply {
-                putString("taskId", clickedTask.id)
+        hourBlockAdapter = HourBlockAdapter(
+            onEdit = { task -> showEditTaskDialog(task) },
+            onDelete = { task ->
+                notesViewModel.deleteTask(task)
+                notesViewModel.getTasksForDate(task.date)
+                val date = LocalDate.parse(task.date)
+                binding.monthCalendarView.notifyDateChanged(date)
+                binding.weekCalendarView.notifyDateChanged(date)
+            },
+                    onTaskClick = { task ->
+                val bundle = Bundle().apply {
+                    putString("taskId", task.id)
+                }
+                findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
             }
-            findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
-        }
+        )
         binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewTasks.adapter = hourBlockAdapter
 
@@ -288,6 +301,17 @@ class NotesFragment : Fragment() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
         val titleInput = dialogView.findViewById<EditText>(R.id.editTextTitle)
         val descriptionInput = dialogView.findViewById<EditText>(R.id.editTextDescription)
+        val startTimeButton = dialogView.findViewById<Button>(R.id.buttonStartTime)
+        val endTimeButton = dialogView.findViewById<Button>(R.id.buttonEndTime)
+
+        // Set up TimePickers
+        startTimeButton.setOnClickListener {
+            showTimePicker { time -> startTimeButton.text = time }
+        }
+
+        endTimeButton.setOnClickListener {
+            showTimePicker { time -> endTimeButton.text = time }
+        }
 
         AlertDialog.Builder(requireContext())
             .setTitle("Add Task")
@@ -295,18 +319,26 @@ class NotesFragment : Fragment() {
             .setPositiveButton("Save") { _, _ ->
                 val title = titleInput.text.toString()
                 val description = descriptionInput.text.toString()
+                val startTime = startTimeButton.text.toString()
+                val endTime = endTimeButton.text.toString()
+
                 if (title.isNotBlank()) {
-                    //Michael: Moving the id creation to here from Task.kt so firebase serializing works correctly
-                    val task = Task(id = System.currentTimeMillis().toString(), title = title, description = description, date = date)
+                    val task = Task(
+                        id = System.currentTimeMillis().toString(),
+                        title = title,
+                        description = description,
+                        date = date,
+                        startTime = startTime,
+                        endTime = endTime
+                    )
+
                     notesViewModel.addTask(task)
                     notesViewModel.getTasksForDate(date)
 
-
-                    // Michael: Adding storing of tasks to realtime DB
-                    ref.push().setValue(task).addOnFailureListener{ e ->
-                        Toast.makeText(requireContext(),"Could not add task to database", Toast.LENGTH_SHORT).show()}
-
-
+                    ref.push().setValue(task)
+                        .addOnFailureListener {
+                            Toast.makeText(requireContext(), "Could not add task to database", Toast.LENGTH_SHORT).show()
+                        }
 
                 } else {
                     Toast.makeText(requireContext(), "Title is required", Toast.LENGTH_SHORT).show()
@@ -315,7 +347,18 @@ class NotesFragment : Fragment() {
             .setNegativeButton("Cancel", null)
             .show()
     }
+    private fun showTimePicker(onTimeSelected: (String) -> Unit) {
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
 
+        TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
+            val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+            onTimeSelected(formattedTime)
+        }, hour, minute, true).show()
+
+
+    }
         private fun showEditTaskDialog(task: Task) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
         val titleInput = dialogView.findViewById<EditText>(R.id.editTextTitle)

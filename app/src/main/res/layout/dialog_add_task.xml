@@ -18,4 +18,19 @@
         android:hint="Description (optional)"
         android:inputType="textMultiLine"
         android:minLines="2" />
+    <Button
+        android:id="@+id/buttonStartTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Time"
+        android:padding="8dp"
+        android:textColor="@android:color/black" />
+
+    <Button
+        android:id="@+id/buttonEndTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="End Time"
+        android:padding="8dp"
+        android:textColor="@android:color/black" />
 </LinearLayout>

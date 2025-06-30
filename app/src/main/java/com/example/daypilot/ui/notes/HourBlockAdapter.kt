@@ -4,14 +4,18 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.daypilot.R
 
-class HourBlockAdapter( private val onTaskClick: (Task) -> Unit
+class HourBlockAdapter(private val onEdit: (Task) -> Unit,
+                       private val onDelete: (Task) -> Unit,
+                       private val onTaskClick: (Task) -> Unit
 ): ListAdapter<HourBlock, HourBlockAdapter.HourBlockViewHolder>(DiffCallBack()) {
 
     inner class HourBlockViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
@@ -49,6 +53,7 @@ class HourBlockAdapter( private val onTaskClick: (Task) -> Unit
 
                 val titleView = card.findViewById<TextView>(R.id.textViewTitle)
                 val descView = card.findViewById<TextView>(R.id.textViewDescription)
+                val moreOptions = card.findViewById<ImageView>(R.id.imageViewMore)
 
                 titleView.text = task.title
                 descView.text = if (task.startTime.isNotBlank() && task.endTime.isNotBlank()) {
@@ -56,9 +61,29 @@ class HourBlockAdapter( private val onTaskClick: (Task) -> Unit
                 } else {
                     "No time specified"
                 }
+                moreOptions.setOnClickListener {
+                    val popup = PopupMenu(holder.itemView.context, moreOptions)
+                    popup.menuInflater.inflate(R.menu.menu_task_options, popup.menu)
+                    popup.setOnMenuItemClickListener { item ->
+                        when (item.itemId) {
+                            R.id.menu_edit -> {
+                                onEdit(task)
+                                true
+                            }
+                            R.id.menu_delete -> {
+                                onDelete(task)
+                                true
+                            }
+                            else -> false
+                        }
+                    }
+                    popup.show()
+                }
+                //tap to go to notes
                 card.setOnClickListener {
                     onTaskClick(task)
                 }
+
 
                 container.addView(card)
             }
