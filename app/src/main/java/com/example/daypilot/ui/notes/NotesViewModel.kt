@@ -159,8 +159,10 @@ class NotesViewModel : ViewModel() {
       val hourBlocks = (-1..23).map { HourBlock(it) }.toMutableList()
 
       for (task in tasks) {
-         val hour = task.startTime.take(2).toIntOrNull() ?: 0 // fallback to 0 AM
-         hourBlocks.find { it.hour == hour }?.tasks?.add(task)
+         val hour = task.startTime.take(2).toIntOrNull()
+         val targetHour = if (task.startTime.isBlank() || hour == null) -1 else hour
+
+         hourBlocks.find { it.hour == targetHour }?.tasks?.add(task)
       }
 
       return hourBlocks

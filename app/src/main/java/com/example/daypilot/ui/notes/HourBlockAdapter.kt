@@ -18,6 +18,7 @@ class HourBlockAdapter(private val onEdit: (Task) -> Unit,
                        private val onTaskClick: (Task) -> Unit
 ): ListAdapter<HourBlock, HourBlockAdapter.HourBlockViewHolder>(DiffCallBack()) {
 
+    var showEmptyMessage = false
     inner class HourBlockViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val hourTextView: TextView= itemView.findViewById(R.id.textViewHour)
         val taskContainerLayout: LinearLayout = itemView.findViewById(R.id.layoutTasksContainer)
@@ -40,12 +41,14 @@ class HourBlockAdapter(private val onEdit: (Task) -> Unit,
         container.removeAllViews()
 
         if (hourBlock.tasks.isEmpty()) {
-            val noTaskView = TextView(holder.itemView.context).apply {
-                text = "No tasks"
-                setTextColor(Color.GRAY)
-                setPadding(16, 8, 0, 8)
+            if(showEmptyMessage) {
+                val noTaskView = TextView(holder.itemView.context).apply {
+                    text = "No tasks"
+                    setTextColor(Color.GRAY)
+                    setPadding(16, 8, 0, 8)
+                }
+                container.addView(noTaskView)
             }
-            container.addView(noTaskView)
         } else {
             hourBlock.tasks.forEach { task ->
                 val card = LayoutInflater.from(holder.itemView.context)
@@ -92,5 +95,9 @@ class HourBlockAdapter(private val onEdit: (Task) -> Unit,
     class DiffCallBack : DiffUtil.ItemCallback<HourBlock>() {
         override fun areItemsTheSame(oldItem: HourBlock, newItem: HourBlock) = oldItem.hour == newItem.hour
         override fun areContentsTheSame(oldItem: HourBlock, newItem: HourBlock) = oldItem == newItem
+    }
+
+    fun getFirstTaskPosition(): Int {
+        return currentList.indexOfFirst { it.tasks.isNotEmpty() }.takeIf { it != -1 } ?: 0
     }
 }
