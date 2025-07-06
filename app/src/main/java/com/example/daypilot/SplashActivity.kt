@@ -33,16 +33,15 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
-        createNotificationChannel()
-
-        TaskNotificationManager.initFirebaseTaskListener(this)
-
 
         Handler(Looper.getMainLooper()).postDelayed({
 
             //persistent login
             val user = FirebaseAuth.getInstance().currentUser
             val intent = if (user != null) {
+
+
+
                 Intent(this@SplashActivity, MainActivity::class.java)
             } else {
                 Intent(this@SplashActivity, AuthActivity::class.java)
@@ -55,19 +54,7 @@ class SplashActivity : AppCompatActivity() {
 
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Notify Channel"
-            val desc = "Task Notifications"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(channelID, name, importance)
-            channel.description = desc
 
-            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-            Log.d("Debugging", "Notification Channel Created")
-        }
-    }
 
 }
 

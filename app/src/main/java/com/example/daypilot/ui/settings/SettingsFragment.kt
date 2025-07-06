@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlarmManager
 import android.app.AlertDialog
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -45,15 +46,12 @@ import java.time.format.DateTimeFormatter
 
 
 val appEmail = "app.daypilot@gmail.com"
-val userEmail = FirebaseAuth.getInstance().currentUser?.email
+
 
 val API_Key = BuildConfig.SENDGRID_API_KEY
 
 var settings = UserSettings()
 
-var darkMode = false
-var notifications = false
-var receipts = false
 
 
 class SettingsFragment : Fragment() {
@@ -74,10 +72,11 @@ class SettingsFragment : Fragment() {
         val ref = FirebaseDatabase.getInstance().getReference("users/$uid/userSettings")
 
 
+
+
         view.findViewById<Button>(R.id.btnLogout).setOnClickListener {
-
+            cancelScheduledNotifications(requireContext())
             FirebaseAuth.getInstance().signOut()
-
             val intent = Intent(requireContext(), SplashActivity::class.java)
             AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
             startActivity(intent)
@@ -131,6 +130,7 @@ class SettingsFragment : Fragment() {
                 val userInput = input.text.toString().trim()
                 if (userInput == "DELETE") {
                     alertDialog.dismiss()
+                    cancelScheduledNotifications(requireContext())
                     FirebaseAuth.getInstance().currentUser?.delete()
                     val intent = Intent(requireContext(), SplashActivity::class.java)
                     AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
@@ -212,6 +212,8 @@ class SettingsFragment : Fragment() {
 }
 
 fun sendEmailToApp(problem: String) {
+
+    val userEmail = FirebaseAuth.getInstance().currentUser?.email
     val json = JSONObject().apply {
         put("personalizations", JSONArray().apply {
             put(JSONObject().apply {
@@ -261,6 +263,8 @@ fun sendEmailToApp(problem: String) {
 }
 
 fun sendEmailToUser(problem: String) {
+
+    val userEmail = FirebaseAuth.getInstance().currentUser?.email
     val json = JSONObject().apply {
         put("personalizations", JSONArray().apply {
             put(JSONObject().apply {
@@ -339,6 +343,44 @@ fun checkNotificationPermissions(context: Context) : Boolean {
     }
 
     return true
+}
+
+fun cancelScheduledNotifications(context: Context) {
+    Log.d("Debugging Log", "Cancel triggered")
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+    val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    ref.addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(snapshot: DataSnapshot) {
+            Log.d("Debugging Log", "Event trigger")
+
+            for (taskSnapshot in snapshot.children) {
+                val taskId = taskSnapshot.key ?: continue
+
+                Log.d("Debugging Log", taskId)
+
+                val intent = Intent(context, NotificationReceiver::class.java)
+
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    taskId.hashCode(),
+                    intent,
+                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                alarmManager.cancel(pendingIntent)
+                Log.d("Debugging Log", "Alarm canceled")
+            }
+
+            NotificationManagerCompat.from(context).cancelAll()
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            Log.d("Debugging Log", error.message)
+        }
+    })
 }
 
 

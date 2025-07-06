@@ -27,10 +27,10 @@ class RegisterViewModel : ViewModel() {
 
                 val user = auth.currentUser
 
-                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@addOnCompleteListener
+                val uid = FirebaseAuth.getInstance().currentUser?.uid
                 val userEmail = FirebaseAuth.getInstance().currentUser?.email
 
-                val userRef = FirebaseDatabase.getInstance().getReference("users").child(uid)
+                val userRef = FirebaseDatabase.getInstance().getReference("users/$uid")
 
                 val userSettings = mapOf(
                     "darkModeOn" to false,
