@@ -162,6 +162,8 @@ class NotificationsFragment : Fragment() {
                             binding.editTaskName.setText(task.title)
                             binding.noteBody.setText(task.description)
                             binding.taskDate.text = task.date
+                            binding.startTimeTextView.text = task.startTime
+                            binding.endTimeTextView.text = task.endTime
                             break
                         }
                     }
@@ -204,6 +206,9 @@ class NotificationsFragment : Fragment() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
 
+        val startTime = binding.startTimeTextView.text.toString()
+        val endTime = binding.endTimeTextView.text.toString()
+
         ref.orderByChild("id").equalTo(taskId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -212,7 +217,9 @@ class NotificationsFragment : Fragment() {
                         val updates = mapOf<String, Any>(
                             "title" to newTitle,
                             "description" to newDescription,
-                            "date" to newDate
+                            "date" to newDate,
+                            "startTime" to startTime,
+                            "endTime" to endTime
                         )
                         taskSnapshot.ref.updateChildren(updates)
                         break
