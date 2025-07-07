@@ -43,5 +43,13 @@
             android:name="com.example.daypilot.ui.settings.SettingsFragment"
             android:label="Settings"
             tools:layout="@layout/fragment_settings"/>
-
+    <fragment
+            android:id="@+id/taskViewFragment"
+            android:name="com.example.daypilot.ui.TasksView.TasksViewFragment"
+            android:label="Tasks"
+            tools:layout="@layout/fragment_tasks_view">
+    <action
+            android:id="@+id/action_navigation_tasksView_to_notifications"
+            app:destination="@+id/navigation_notifications"/>
+    </fragment>
 </navigation>
