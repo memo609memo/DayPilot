@@ -77,7 +77,8 @@ class NotesViewModel : ViewModel() {
                val taskMapById = mutableMapOf<String, Task>()
                for (taskSnapshot in snapshot.children) {
                   val task = taskSnapshot.getValue(Task::class.java)
-                  task?.let { taskMapById[it.id] = it }
+                  task?.let {Log.d("TaskCheck", "Task: ${it.title}, Completed: ${it.isCompleted}")
+                     taskMapById[it.id] = it }
                }
                val taskList = taskMapById.values.toList()
                if (taskList.isEmpty()) {
@@ -166,6 +167,26 @@ class NotesViewModel : ViewModel() {
       }
 
       return hourBlocks
+   }
+
+   fun markTaskAsCompleted(task: Task){
+      val query = ref.orderByChild("id").equalTo(task.id)
+
+      query.addListenerForSingleValueEvent(object : ValueEventListener {
+         override fun onDataChange(snapshot: DataSnapshot) {
+            for (childSnapshot in snapshot.children) {
+               val updatedTask = task.copy(isCompleted = true)
+               childSnapshot.ref.setValue(updatedTask)
+               getTasksForDate(task.date)
+            }
+         }
+
+         override fun onCancelled(error: DatabaseError) {
+            Log.e("Firebase", "Failed to mark task as completed", error.toException())
+         }
+      })
+
+
    }
 
    }

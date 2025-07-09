@@ -77,7 +77,14 @@ class NotesFragment : Fragment() {
                 binding.monthCalendarView.notifyDateChanged(date)
                 binding.weekCalendarView.notifyDateChanged(date)
             },
-                    onTaskClick = { task ->
+            onComplete = { task -> // ✅ handle completion
+                notesViewModel.markTaskAsCompleted(task)
+                notesViewModel.getTasksForDate(task.date)
+                val date = LocalDate.parse(task.date)
+                binding.monthCalendarView.notifyDateChanged(date)
+                binding.weekCalendarView.notifyDateChanged(date)
+            },
+            onTaskClick = { task ->
                 val bundle = Bundle().apply {
                     putString("taskId", task.id)
                 }
@@ -381,6 +388,7 @@ class NotesFragment : Fragment() {
                         }else {
                             startTimeLayout.error = null
                             endTimeLayout.error = null
+                            isValid = true
                         }
                     } catch (e: DateTimeParseException) {
                         startTimeLayout.error = "Invalid format"
@@ -406,7 +414,8 @@ class NotesFragment : Fragment() {
                     description = description,
                     date = date,
                     startTime = startTime,
-                    endTime = endTime
+                    endTime = endTime,
+                    isCompleted = false
                 )
                 notesViewModel.addTask(task)
                 notesViewModel.getTasksForDate(date)
