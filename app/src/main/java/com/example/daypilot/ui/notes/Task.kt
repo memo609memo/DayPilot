@@ -6,4 +6,5 @@ data class Task(  val id: String = "",
                   val date: String = "",
                   val startTime: String = "",
                   val endTime: String = "",
+                  val repeats: List<Boolean> = List(7) { false }
     ): Serializable

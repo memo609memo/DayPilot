@@ -64,13 +64,47 @@ class NotificationsFragment : Fragment() {
             showDatePickerDialog()
         }
 
-
+        binding.repeatTextView.setOnClickListener {
+            showRepeatSelectionDialog()
+        }
 
 
         return root
     }
 
+    private fun showRepeatSelectionDialog() {
+        val weekDays = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+        val selectedItems = repeatToggles.toBooleanArray()
 
+        val builder = android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Repeat On")
+            .setMultiChoiceItems(weekDays.toTypedArray(), selectedItems){ _, index, isChecked ->
+                repeatToggles[index] = isChecked
+            }
+                .setPositiveButton("Ok") { _, _ ->
+                    setupRepeatButtons()
+
+                    val taskId = arguments?.getString("taskId") ?: return@setPositiveButton
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setPositiveButton
+                    val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+
+                    ref.orderByChild("id").equalTo(taskId)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                for (child in snapshot.children) {
+                                    child.ref.child("repeats").setValue(repeatToggles)
+                                }
+                            }
+                            override fun onCancelled(error: DatabaseError) {
+                                Log.e("Firebase", "Repeats failed to save" + error.message)
+                            }
+                        })
+
+                }
+                .setNegativeButton("Cancel", null)
+
+                builder.create().show()
+    }
 
     private fun setupRepeatButtons() {
         val buttons = listOf(
@@ -90,6 +124,24 @@ class NotificationsFragment : Fragment() {
             button.setOnClickListener {
                 repeatToggles[index] = !repeatToggles[index]
                 button.isSelected = repeatToggles[index]
+
+                val taskId = arguments?.getString("taskId") ?: return@setOnClickListener
+                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setOnClickListener
+                val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+
+                ref.orderByChild("id").equalTo(taskId)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            for (child in snapshot.children) {
+                                child.ref.child("repeats").setValue(repeatToggles)
+                            }
+                        }
+                        override fun onCancelled(error: DatabaseError) {
+                            Log.e("Firebase", "Repeats failed to save" + error.message)
+                        }
+                    })
+
+
             }
         }
     }
@@ -164,6 +216,11 @@ class NotificationsFragment : Fragment() {
                             binding.taskDate.text = task.date
                             binding.startTimeTextView.text = task.startTime
                             binding.endTimeTextView.text = task.endTime
+                            val repeatList = task.repeats
+                            repeatList.forEachIndexed{ index, value ->
+                                repeatToggles[index] = value
+                            }
+                            setupRepeatButtons()
                             break
                         }
                     }
@@ -219,7 +276,8 @@ class NotificationsFragment : Fragment() {
                             "description" to newDescription,
                             "date" to newDate,
                             "startTime" to startTime,
-                            "endTime" to endTime
+                            "endTime" to endTime,
+                            "repeats" to repeatToggles
                         )
                         taskSnapshot.ref.updateChildren(updates)
                         break

@@ -32,6 +32,10 @@
             android:ems="10"
             android:id="@+id/taskDate"/>
 
+
+
+
+
     <TextView
             android:background="@drawable/rounded_edittext_corners"
             android:layout_width="180dp"
@@ -42,13 +46,9 @@
             android:ems="10"
             android:id="@+id/repeatTextView"
             android:textSize="16dp"
+            android:clickable="true"
+            android:focusable="true"
     />
-
-
-
-
-
-
 
     <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/repeatSunday"
@@ -57,6 +57,7 @@
             android:layout_height="15dp"
             android:layout_marginStart="89dp"
             android:layout_marginTop="84dp"
+            android:clickable="false"
     />
     <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/repeatMonday"
@@ -65,6 +66,7 @@
             android:layout_height="15dp"
             android:layout_marginStart="104dp"
             android:layout_marginTop="84dp"
+            android:clickable="false"
     />
     <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/repeatTuesday"
@@ -73,6 +75,7 @@
             android:layout_height="15dp"
             android:layout_marginStart="119dp"
             android:layout_marginTop="84dp"
+            android:clickable="false"
     />
     <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/repeatWednesday"
@@ -81,6 +84,7 @@
             android:layout_height="15dp"
             android:layout_marginStart="134dp"
             android:layout_marginTop="84dp"
+            android:clickable="false"
     />
     <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/repeatThursday"
@@ -89,6 +93,7 @@
             android:layout_height="15dp"
             android:layout_marginStart="149dp"
             android:layout_marginTop="84dp"
+            android:clickable="false"
     />
     <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/repeatFriday"
@@ -97,6 +102,7 @@
             android:layout_height="15dp"
             android:layout_marginStart="163dp"
             android:layout_marginTop="84dp"
+            android:clickable="false"
     />
     <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/repeatSaturday"
@@ -105,6 +111,7 @@
             android:layout_height="15dp"
             android:layout_marginStart="177dp"
             android:layout_marginTop="84dp"
+            android:clickable="false"
     />
 
 
