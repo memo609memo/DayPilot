@@ -55,6 +55,29 @@ class NotificationsFragment : Fragment() {
             val newTitle = binding.editTaskName.text.toString()
             val updatedDescription = binding.noteBody.text.toString()
             val newDate = binding.taskDate.text.toString()
+
+            if (newTitle.isEmpty()) {
+                binding.editTaskName.error = "Please enter title"
+                return@setOnClickListener
+            }
+
+
+
+            val startTimeTextBox = binding.startTimeTextView.text.toString()
+            val endTimeTextBox = binding.endTimeTextView.text.toString()
+
+            if(startTimeTextBox.isNotBlank() && endTimeTextBox.isNotBlank()) {
+
+                val startTimeMinMode = selectedStartHour * 60 + selectedStartMinute
+                val endTimeMinMode = selectedEndHour * 60 + selectedEndMinute
+
+                if (endTimeMinMode <= startTimeMinMode) {
+                    binding.endTimeTextView.error = "End time must be later than start time"
+                    return@setOnClickListener
+                }
+            }
+
+
             if (taskId != null) {
                 updateTaskInFirebase(taskId, newTitle, updatedDescription,newDate)
             }
