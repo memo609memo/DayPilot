@@ -190,6 +190,7 @@ class SettingsFragment : Fragment() {
             if (!isChecked) {
                 settings.notificationsOn = false
                 ref.setValue(settings)
+                cancelScheduledNotifications(requireContext())
             }
             else {
                 settings.notificationsOn = true
