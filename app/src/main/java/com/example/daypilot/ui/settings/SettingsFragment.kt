@@ -1,8 +1,16 @@
 package com.example.daypilot.ui.settings
 
+import android.Manifest
+import android.app.AlarmManager
 import android.app.AlertDialog
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.InputType
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -13,7 +21,12 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Switch
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.navigation.fragment.findNavController
 import com.example.daypilot.R
 import com.google.firebase.auth.FirebaseAuth
@@ -27,18 +40,18 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.example.daypilot.SplashActivity
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 
 val appEmail = "app.daypilot@gmail.com"
-val userEmail = FirebaseAuth.getInstance().currentUser?.email
+
 
 val API_Key = BuildConfig.SENDGRID_API_KEY
 
 var settings = UserSettings()
 
-var darkMode = false
-var notifications = false
-var receipts = false
 
 
 class SettingsFragment : Fragment() {
@@ -51,16 +64,19 @@ class SettingsFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_settings, container, false)
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         val ref = FirebaseDatabase.getInstance().getReference("users/$uid/userSettings")
 
+
+
+
         view.findViewById<Button>(R.id.btnLogout).setOnClickListener {
-
+            cancelScheduledNotifications(requireContext())
             FirebaseAuth.getInstance().signOut()
-
             val intent = Intent(requireContext(), SplashActivity::class.java)
             AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
             startActivity(intent)
@@ -114,6 +130,7 @@ class SettingsFragment : Fragment() {
                 val userInput = input.text.toString().trim()
                 if (userInput == "DELETE") {
                     alertDialog.dismiss()
+                    cancelScheduledNotifications(requireContext())
                     FirebaseAuth.getInstance().currentUser?.delete()
                     val intent = Intent(requireContext(), SplashActivity::class.java)
                     AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
@@ -173,10 +190,12 @@ class SettingsFragment : Fragment() {
             if (!isChecked) {
                 settings.notificationsOn = false
                 ref.setValue(settings)
+                cancelScheduledNotifications(requireContext())
             }
             else {
                 settings.notificationsOn = true
                 ref.setValue(settings)
+                checkNotificationPermissions(requireContext())
             }
         }
 
@@ -194,6 +213,8 @@ class SettingsFragment : Fragment() {
 }
 
 fun sendEmailToApp(problem: String) {
+
+    val userEmail = FirebaseAuth.getInstance().currentUser?.email
     val json = JSONObject().apply {
         put("personalizations", JSONArray().apply {
             put(JSONObject().apply {
@@ -243,6 +264,8 @@ fun sendEmailToApp(problem: String) {
 }
 
 fun sendEmailToUser(problem: String) {
+
+    val userEmail = FirebaseAuth.getInstance().currentUser?.email
     val json = JSONObject().apply {
         put("personalizations", JSONArray().apply {
             put(JSONObject().apply {
@@ -283,6 +306,82 @@ fun sendEmailToUser(problem: String) {
         }
     }
     thread.start()
+}
+
+fun checkNotificationPermissions(context: Context) : Boolean {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val isEnabled = notificationManager.areNotificationsEnabled()
+
+        if (!isEnabled) {
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            context.startActivity(intent)
+
+            return false
+
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                context.startActivity(intent)
+            }
+        }
+    } else {
+        val areEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+
+        if (!areEnabled) {
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            context.startActivity(intent)
+
+            return false
+        }
+    }
+
+    return true
+}
+
+fun cancelScheduledNotifications(context: Context) {
+    Log.d("Debugging Log", "Cancel triggered")
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+    val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    ref.addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(snapshot: DataSnapshot) {
+            Log.d("Debugging Log", "Event trigger")
+
+            for (taskSnapshot in snapshot.children) {
+                val taskId = taskSnapshot.key ?: continue
+
+                Log.d("Debugging Log", taskId)
+
+                val intent = Intent(context, NotificationReceiver::class.java)
+
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    taskId.hashCode(),
+                    intent,
+                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                alarmManager.cancel(pendingIntent)
+                Log.d("Debugging Log", "Alarm canceled")
+            }
+
+            NotificationManagerCompat.from(context).cancelAll()
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            Log.d("Debugging Log", error.message)
+        }
+    })
 }
 
 

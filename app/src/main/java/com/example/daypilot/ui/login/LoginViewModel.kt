@@ -37,21 +37,7 @@ class LoginViewModel : ViewModel() {
                 val user = auth.currentUser
                 if(user != null && user.isEmailVerified) {
                     _loginSuccess.value = true
-                    val uid = FirebaseAuth.getInstance().currentUser?.uid
-                    val ref = FirebaseDatabase.getInstance().getReference("users/$uid/userSettings")
 
-                    ref.addListenerForSingleValueEvent(object: ValueEventListener {
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            val settings = snapshot.getValue(UserSettings::class.java)
-                            settings?. let {
-                                applyDarkMode(it.darkModeOn)
-                            }
-                        }
-
-                        override fun onCancelled(error: DatabaseError) {
-
-                        }
-                    })
 
                 } else {
                     _loginSuccess.value = false
