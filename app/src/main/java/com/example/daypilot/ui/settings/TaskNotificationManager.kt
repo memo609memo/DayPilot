@@ -17,6 +17,7 @@ import com.google.firebase.database.ValueEventListener
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 object TaskNotificationManager {
 
@@ -68,14 +69,15 @@ object TaskNotificationManager {
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
-    fun scheduleTaskNotification(context: Context, taskId: String, title: String, description: String, date: String, time: String) {
+    fun scheduleTaskNotification(context: Context, taskId: String, title: String, description: String, date: String, startTime: String) {
         Log.d("Debugging Log", "Notification function triggered")
-        val taskTimeMillis = parseTaskDateTime(date, time)
+        if (date == "" || startTime == "") return
+        val taskTimeMillis = parseTaskDateTime(date, startTime)
         val notifyTime = taskTimeMillis - 15 * 60 * 1000
 
         if (notifyTime < System.currentTimeMillis()) return
 
-        val notification = "$title is starting in 15 minutes at $time."
+        val notification = "$title is starting in 15 minutes at $startTime."
 
         Log.d("Debugging Log", notification)
 
@@ -118,7 +120,7 @@ object TaskNotificationManager {
     }
 
     private fun parseTaskDateTime(date: String, time: String): Long {
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a", Locale.US)
         val localDateTime = LocalDateTime.parse("$date $time", formatter)
         return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
     }
