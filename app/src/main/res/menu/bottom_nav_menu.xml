@@ -14,5 +14,9 @@
             android:id="@+id/navigation_notes"
         android:icon="@android:drawable/ic_menu_edit"
             android:title="@string/title_notes"/>
+    <item
+            android:id="@+id/taskViewFragment"
+            android:icon="@android:drawable/ic_menu_info_details"
+            android:title="@string/title_tasksView"/>
 
 </menu>

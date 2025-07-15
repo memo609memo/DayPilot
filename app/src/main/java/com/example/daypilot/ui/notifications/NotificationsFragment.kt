@@ -1,7 +1,9 @@
 package com.example.daypilot.ui.notifications
 
-import android.graphics.Color
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,18 +11,14 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.daypilot.databinding.FragmentNotificationsBinding
-import android.app.TimePickerDialog
-import android.graphics.Color.alpha
-import androidx.navigation.fragment.findNavController
-import com.example.daypilot.R
+import com.example.daypilot.ui.notes.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import java.util.*
-import com.example.daypilot.ui.notes.Task
-import android.util.Log
+import java.time.LocalDate
+import java.util.Calendar
 
 class NotificationsFragment : Fragment() {
 
@@ -56,18 +54,80 @@ class NotificationsFragment : Fragment() {
         binding.saveButton.setOnClickListener {
             val newTitle = binding.editTaskName.text.toString()
             val updatedDescription = binding.noteBody.text.toString()
+            val newDate = binding.taskDate.text.toString()
+
+            if (newTitle.isEmpty()) {
+                binding.editTaskName.error = "Please enter title"
+                return@setOnClickListener
+            }
+
+
+
+            val startTimeTextBox = binding.startTimeTextView.text.toString()
+            val endTimeTextBox = binding.endTimeTextView.text.toString()
+
+            if(startTimeTextBox.isNotBlank() && endTimeTextBox.isNotBlank()) {
+
+                val startTimeMinMode = selectedStartHour * 60 + selectedStartMinute
+                val endTimeMinMode = selectedEndHour * 60 + selectedEndMinute
+
+                if (endTimeMinMode <= startTimeMinMode) {
+                    binding.endTimeTextView.error = "End time must be later than start time"
+                    return@setOnClickListener
+                }
+            }
+
+
             if (taskId != null) {
-                updateTaskInFirebase(taskId, newTitle, updatedDescription)
+                updateTaskInFirebase(taskId, newTitle, updatedDescription,newDate)
             }
         }
 
+        binding.taskDate.setOnClickListener {
+            showDatePickerDialog()
+        }
 
+        binding.repeatTextView.setOnClickListener {
+            showRepeatSelectionDialog()
+        }
 
 
         return root
     }
 
+    private fun showRepeatSelectionDialog() {
+        val weekDays = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+        val selectedItems = repeatToggles.toBooleanArray()
 
+        val builder = android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Repeat On")
+            .setMultiChoiceItems(weekDays.toTypedArray(), selectedItems){ _, index, isChecked ->
+                repeatToggles[index] = isChecked
+            }
+                .setPositiveButton("Ok") { _, _ ->
+                    setupRepeatButtons()
+
+                    val taskId = arguments?.getString("taskId") ?: return@setPositiveButton
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setPositiveButton
+                    val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+
+                    ref.orderByChild("id").equalTo(taskId)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                for (child in snapshot.children) {
+                                    child.ref.child("repeats").setValue(repeatToggles)
+                                }
+                            }
+                            override fun onCancelled(error: DatabaseError) {
+                                Log.e("Firebase", "Repeats failed to save" + error.message)
+                            }
+                        })
+
+                }
+                .setNegativeButton("Cancel", null)
+
+                builder.create().show()
+    }
 
     private fun setupRepeatButtons() {
         val buttons = listOf(
@@ -87,6 +147,24 @@ class NotificationsFragment : Fragment() {
             button.setOnClickListener {
                 repeatToggles[index] = !repeatToggles[index]
                 button.isSelected = repeatToggles[index]
+
+                val taskId = arguments?.getString("taskId") ?: return@setOnClickListener
+                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setOnClickListener
+                val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+
+                ref.orderByChild("id").equalTo(taskId)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            for (child in snapshot.children) {
+                                child.ref.child("repeats").setValue(repeatToggles)
+                            }
+                        }
+                        override fun onCancelled(error: DatabaseError) {
+                            Log.e("Firebase", "Repeats failed to save" + error.message)
+                        }
+                    })
+
+
             }
         }
     }
@@ -158,6 +236,14 @@ class NotificationsFragment : Fragment() {
                         if (task != null) {
                             binding.editTaskName.setText(task.title)
                             binding.noteBody.setText(task.description)
+                            binding.taskDate.text = task.date
+                            binding.startTimeTextView.text = task.startTime
+                            binding.endTimeTextView.text = task.endTime
+                            val repeatList = task.repeats
+                            repeatList.forEachIndexed{ index, value ->
+                                repeatToggles[index] = value
+                            }
+                            setupRepeatButtons()
                             break
                         }
                     }
@@ -175,17 +261,46 @@ class NotificationsFragment : Fragment() {
     //Don't forget to add in Time Start + Time End
     //Also need to add Repeat section when that is done
     //Luis will also need to add the logic for saving the date in here!
-    private fun updateTaskInFirebase(taskId: String, newTitle: String, newDescription: String) {
+
+    private fun showDatePickerDialog() {
+        val calendar = Calendar.getInstance()
+
+        val datePicker = DatePickerDialog(
+            requireContext(),
+            { _, year, month, dayOfMonth ->
+                val selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
+                binding.taskDate.text = selectedDate.toString()
+
+
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        datePicker.show()
+    }
+    private fun updateTaskInFirebase(taskId: String, newTitle: String, newDescription: String,newDate: String) {
+
+
+
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+
+        val startTime = binding.startTimeTextView.text.toString()
+        val endTime = binding.endTimeTextView.text.toString()
 
         ref.orderByChild("id").equalTo(taskId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     for(taskSnapshot in snapshot.children) {
+
                         val updates = mapOf<String, Any>(
                             "title" to newTitle,
-                            "description" to newDescription
+                            "description" to newDescription,
+                            "date" to newDate,
+                            "startTime" to startTime,
+                            "endTime" to endTime,
+                            "repeats" to repeatToggles
                         )
                         taskSnapshot.ref.updateChildren(updates)
                         break
