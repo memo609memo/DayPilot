@@ -12,11 +12,18 @@
         android:layout_height="wrap_content"
         android:text="08:00"
         android:textColor="@android:color/darker_gray"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:layout_gravity="top" />
 
-    <LinearLayout
-        android:id="@+id/layoutTasksContainer"
-        android:layout_width="match_parent"
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewTasksHorizontal"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical" />
+        android:layout_weight="1"
+        android:scrollbars="horizontal"
+        android:overScrollMode="ifContentScrolls"
+        android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp" />
 </LinearLayout>

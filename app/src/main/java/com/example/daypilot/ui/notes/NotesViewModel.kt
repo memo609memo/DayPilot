@@ -9,6 +9,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 
 class NotesViewModel : ViewModel() {
@@ -157,16 +159,30 @@ class NotesViewModel : ViewModel() {
       })
    }
    fun buildHourBlocksFromTasks(tasks: List<Task>): List<HourBlock> {
-      val hourBlocks = (-1..23).map { HourBlock(it) }.toMutableList()
+      val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+      val blocks = mutableMapOf<Int, MutableList<Task>>()
 
       for (task in tasks) {
-         val hour = task.startTime.take(2).toIntOrNull()
-         val targetHour = if (task.startTime.isBlank() || hour == null) -1 else hour
-
-         hourBlocks.find { it.hour == targetHour }?.tasks?.add(task)
+         if (task.startTime.isNotBlank() && task.endTime.isNotBlank()) {
+            try {
+               val start = sdf.parse(task.startTime)
+               val startHour = start?.hours ?: continue
+               blocks.getOrPut(startHour) { mutableListOf() }.add(task)
+            } catch (e: Exception) {
+               blocks.getOrPut(-1) { mutableListOf() }.add(task)
+            }
+         } else {
+            blocks.getOrPut(-1) { mutableListOf() }.add(task)
+         }
       }
 
-      return hourBlocks
+      return (0..23).map { hour ->
+         HourBlock(hour, blocks[hour] ?: mutableListOf())
+      }.toMutableList().apply {
+         if (blocks.containsKey(-1)) {
+            add(0, HourBlock(-1, blocks[-1]!!))
+         }
+      }
    }
 
    fun markTaskAsCompleted(task: Task){

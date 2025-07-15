@@ -2,12 +2,13 @@
 <androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:id="@+id/cardViewTask"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     card_view:cardCornerRadius="12dp"
     card_view:cardElevation="4dp"
+    android:maxWidth="250dp"
     >
 
     <LinearLayout
@@ -18,10 +19,12 @@
 
         <TextView
             android:id="@+id/textViewTitle"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textStyle="bold"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
         <TextView
             android:id="@+id/textViewIsCompleted"
             android:layout_width="wrap_content"
@@ -33,7 +36,7 @@
             android:paddingTop="4dp"/>
         <TextView
             android:id="@+id/textViewDescription"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="14sp"
             android:maxLines="1"

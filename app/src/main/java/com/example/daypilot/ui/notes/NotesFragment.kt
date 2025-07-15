@@ -52,6 +52,7 @@ class NotesFragment : Fragment() {
     private val uid = FirebaseAuth.getInstance().currentUser?.uid
     val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
 
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
     {
         notesViewModel = ViewModelProvider(this).get(NotesViewModel::class.java)
@@ -60,13 +61,7 @@ class NotesFragment : Fragment() {
         val root = binding.root
 
 
-        adapter = TaskAdapter { clickedTask ->
-            Toast.makeText(requireContext(), "Clicked Task: ${clickedTask.title}", Toast.LENGTH_SHORT).show()
-            val bundle = Bundle().apply {
-                putString("taskId", clickedTask.id)
-            }
-            findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
-        }
+
 
         hourBlockAdapter = HourBlockAdapter(
             onEdit = { task -> showEditTaskDialog(task) },
@@ -95,24 +90,24 @@ class NotesFragment : Fragment() {
         binding.recyclerViewTasks.adapter = hourBlockAdapter
 
         // Attach swipe callback
-       /*val swipeCallback = SwipeToActionCallback(
-            requireContext(),
-            adapter,
-            onEdit = { position ->
-                val task = adapter.currentList[position]
-                showEditTaskDialog(task)
-            },
-            onDelete = { position ->
-                val task = adapter.currentList[position]
-                notesViewModel.deleteTask(task)
+        /*val swipeCallback = SwipeToActionCallback(
+             requireContext(),
+             adapter,
+             onEdit = { position ->
+                 val task = adapter.currentList[position]
+                 showEditTaskDialog(task)
+             },
+             onDelete = { position ->
+                 val task = adapter.currentList[position]
+                 notesViewModel.deleteTask(task)
 
-                //Reload tasks and refresh the red dot for that date
-                notesViewModel.getTasksForDate(task.date)
-                val date = LocalDate.parse(task.date)
-                binding.monthCalendarView.notifyDateChanged(date)
-                binding.weekCalendarView.notifyDateChanged(date)
-            }
-        )*/
+                 //Reload tasks and refresh the red dot for that date
+                 notesViewModel.getTasksForDate(task.date)
+                 val date = LocalDate.parse(task.date)
+                 binding.monthCalendarView.notifyDateChanged(date)
+                 binding.weekCalendarView.notifyDateChanged(date)
+             }
+         )*/
         //ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.recyclerViewTasks)
 
         // Observe tasks for selected date to update RecyclerView
