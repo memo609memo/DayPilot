@@ -9,6 +9,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 
 class NotesViewModel : ViewModel() {
@@ -77,7 +79,8 @@ class NotesViewModel : ViewModel() {
                val taskMapById = mutableMapOf<String, Task>()
                for (taskSnapshot in snapshot.children) {
                   val task = taskSnapshot.getValue(Task::class.java)
-                  task?.let { taskMapById[it.id] = it }
+                  task?.let {Log.d("TaskCheck", "Task: ${it.title}, Completed: ${it.isCompleted}")
+                     taskMapById[it.id] = it }
                }
                val taskList = taskMapById.values.toList()
                if (taskList.isEmpty()) {
@@ -155,7 +158,54 @@ class NotesViewModel : ViewModel() {
          }
       })
    }
+   fun buildHourBlocksFromTasks(tasks: List<Task>): List<HourBlock> {
+      val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+      val blocks = mutableMapOf<Int, MutableList<Task>>()
+
+      for (task in tasks) {
+         if (task.startTime.isNotBlank() && task.endTime.isNotBlank()) {
+            try {
+               val start = sdf.parse(task.startTime)
+               val startHour = start?.hours ?: continue
+               blocks.getOrPut(startHour) { mutableListOf() }.add(task)
+            } catch (e: Exception) {
+               blocks.getOrPut(-1) { mutableListOf() }.add(task)
+            }
+         } else {
+            blocks.getOrPut(-1) { mutableListOf() }.add(task)
+         }
+      }
+
+      return (0..23).map { hour ->
+         HourBlock(hour, blocks[hour] ?: mutableListOf())
+      }.toMutableList().apply {
+         if (blocks.containsKey(-1)) {
+            add(0, HourBlock(-1, blocks[-1]!!))
+         }
+      }
+   }
+
+   fun markTaskAsCompleted(task: Task){
+      val query = ref.orderByChild("id").equalTo(task.id)
+
+      query.addListenerForSingleValueEvent(object : ValueEventListener {
+         override fun onDataChange(snapshot: DataSnapshot) {
+            for (childSnapshot in snapshot.children) {
+               val updatedTask = task.copy(isCompleted = true)
+               childSnapshot.ref.setValue(updatedTask)
+               getTasksForDate(task.date)
+            }
+         }
+
+         override fun onCancelled(error: DatabaseError) {
+            Log.e("Firebase", "Failed to mark task as completed", error.toException())
+         }
+      })
+
+
+   }
+
+   }
 
 
 
-}

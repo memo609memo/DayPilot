@@ -21,4 +21,5 @@
     <color name="dark_screen_background">#FF1A1C1B</color>
     <color name="text_color">#FF000000</color>
     <color name="dark_text_color">#FFFFFFFF</color>
+    <color name="completedTaskBackground">#D6EAF8</color>
 </resources>

@@ -1,11 +1,13 @@
 package com.example.daypilot.ui.notes
 
 
+import android.app.TimePickerDialog
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -13,19 +15,27 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.daypilot.R
 import com.example.daypilot.databinding.FragmentNotesBinding
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.daysOfWeek
 import com.kizitonwose.calendar.view.MonthDayBinder
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.util.Calendar
 import java.util.Locale
 
 
@@ -35,12 +45,13 @@ class NotesFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var notesViewModel: NotesViewModel
     private  lateinit var adapter: TaskAdapter
-
+    private lateinit var hourBlockAdapter: HourBlockAdapter
     private var selectedLocalDate: LocalDate = LocalDate.now()
 
     //Michael: Adding this for realtime DB
     private val uid = FirebaseAuth.getInstance().currentUser?.uid
     val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
     {
@@ -50,43 +61,74 @@ class NotesFragment : Fragment() {
         val root = binding.root
 
 
-        adapter = TaskAdapter { clickedTask ->
-            Toast.makeText(requireContext(), "Clicked Task: ${clickedTask.title}", Toast.LENGTH_SHORT).show()
-            val bundle = Bundle().apply {
-                putString("taskId", clickedTask.id)
-            }
-            findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
-        }
 
-        binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerViewTasks.adapter = adapter
 
-        // Attach swipe callback
-        val swipeCallback = SwipeToActionCallback(
-            requireContext(),
-            adapter,
-            onEdit = { position ->
-                val task = adapter.currentList[position]
-                showEditTaskDialog(task)
-            },
-            onDelete = { position ->
-                val task = adapter.currentList[position]
+        hourBlockAdapter = HourBlockAdapter(
+            onEdit = { task -> showEditTaskDialog(task) },
+            onDelete = { task ->
                 notesViewModel.deleteTask(task)
-
-                //Reload tasks and refresh the red dot for that date
                 notesViewModel.getTasksForDate(task.date)
                 val date = LocalDate.parse(task.date)
                 binding.monthCalendarView.notifyDateChanged(date)
                 binding.weekCalendarView.notifyDateChanged(date)
+            },
+            onComplete = { task -> // ✅ handle completion
+                notesViewModel.markTaskAsCompleted(task)
+                notesViewModel.getTasksForDate(task.date)
+                val date = LocalDate.parse(task.date)
+                binding.monthCalendarView.notifyDateChanged(date)
+                binding.weekCalendarView.notifyDateChanged(date)
+            },
+            onTaskClick = { task ->
+                val bundle = Bundle().apply {
+                    putString("taskId", task.id)
+                }
+                findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
             }
         )
-        ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.recyclerViewTasks)
+        binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerViewTasks.adapter = hourBlockAdapter
+
+        // Attach swipe callback
+        /*val swipeCallback = SwipeToActionCallback(
+             requireContext(),
+             adapter,
+             onEdit = { position ->
+                 val task = adapter.currentList[position]
+                 showEditTaskDialog(task)
+             },
+             onDelete = { position ->
+                 val task = adapter.currentList[position]
+                 notesViewModel.deleteTask(task)
+
+                 //Reload tasks and refresh the red dot for that date
+                 notesViewModel.getTasksForDate(task.date)
+                 val date = LocalDate.parse(task.date)
+                 binding.monthCalendarView.notifyDateChanged(date)
+                 binding.weekCalendarView.notifyDateChanged(date)
+             }
+         )*/
+        //ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.recyclerViewTasks)
 
         // Observe tasks for selected date to update RecyclerView
         notesViewModel.tasksForSelectedDate.observe(viewLifecycleOwner) { tasks ->
-            adapter.submitList(tasks)
+            //adapter.submitList(tasks)
             binding.textViewNoTasks.visibility = if (tasks.isEmpty()) View.VISIBLE else View.GONE
+            val hourBlocks = notesViewModel.buildHourBlocksFromTasks(tasks)
+            hourBlockAdapter.showEmptyMessage = tasks.isNotEmpty()
+
+
+            hourBlockAdapter.submitList(hourBlocks){
+                val firstTaskPosition = hourBlockAdapter.getFirstTaskPosition()
+                if(firstTaskPosition != RecyclerView.NO_POSITION){
+                    binding.recyclerViewTasks.post {
+                        binding.recyclerViewTasks.smoothScrollToPosition(firstTaskPosition)
+                    }
+                }
+            }
         }
+        // dont close dialog if no title is set
+
 
         notesViewModel.preloadAllTasks{
             binding.monthCalendarView.notifyCalendarChanged()
@@ -229,7 +271,7 @@ class NotesFragment : Fragment() {
 
         // Observe selected date changes and show toast
         notesViewModel.selectedDate.observe(viewLifecycleOwner) { date ->
-            Toast.makeText(requireContext(), "Selected: $date", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(requireContext(), "Selected: $date", Toast.LENGTH_SHORT).show()
         }
 
         // Switch calendar visibility
@@ -273,72 +315,236 @@ class NotesFragment : Fragment() {
         return root
     }
 
-    override fun onResume() {
-        super.onResume()
-        val selected = notesViewModel.selectedDate.value
-        if (selected != null) {
-            notesViewModel.getTasksForDate(selected)
-            binding.monthCalendarView.notifyDateChanged(LocalDate.parse(selected))
-            binding.weekCalendarView.notifyDateChanged(LocalDate.parse(selected))
-        }
-    }
 
     private fun showAddTaskDialog(date: String) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
-        val titleInput = dialogView.findViewById<EditText>(R.id.editTextTitle)
+        val titleInputLayout = dialogView.findViewById<TextInputLayout>(R.id.titleInputLayout)
+        val titleInput = dialogView.findViewById<TextInputEditText>(R.id.editTextTitle)
         val descriptionInput = dialogView.findViewById<EditText>(R.id.editTextDescription)
+        val startTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.startTimeLayout)
+        val endTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.endTimeLayout)
+        val startTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextStartTime)
+        val endTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextEndTime)
 
-        AlertDialog.Builder(requireContext())
+        // Set up TimePickers
+        startTimeInput.setOnClickListener {
+            showTimePicker { time -> startTimeInput.setText(time) }
+        }
+        endTimeInput.setOnClickListener {
+            showTimePicker { time -> endTimeInput.setText(time) }
+        }
+
+       val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Add Task")
             .setView(dialogView)
-            .setPositiveButton("Save") { _, _ ->
+            .setPositiveButton("Save", null)
+           .setNegativeButton("Cancel", null)
+           .create()
+
+        dialog.setOnShowListener{
+            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            saveButton.setOnClickListener{
                 val title = titleInput.text.toString()
                 val description = descriptionInput.text.toString()
-                if (title.isNotBlank()) {
-                    //Michael: Moving the id creation to here from Task.kt so firebase serializing works correctly
-                    val task = Task(id = System.currentTimeMillis().toString(), title = title, description = description, date = date)
-                    notesViewModel.addTask(task)
-                    notesViewModel.getTasksForDate(date)
+                val startTime = startTimeInput.text.toString()
+                val endTime = endTimeInput.text.toString()
 
-
-                    // Michael: Adding storing of tasks to realtime DB
-                    ref.push().setValue(task).addOnFailureListener{ e ->
-                        Toast.makeText(requireContext(),"Could not add task to database", Toast.LENGTH_SHORT).show()}
+                var isValid = true
 
 
 
-                } else {
-                    Toast.makeText(requireContext(), "Title is required", Toast.LENGTH_SHORT).show()
+                //validation(edge cases)
+
+                if (title.isBlank()) {
+                    titleInputLayout.error = "Title is required"
+                    val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
+                    titleInputLayout.startAnimation(shake)
+                    isValid = false
+                }else{
+                    titleInputLayout.error = null
                 }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
 
+                // Validate time
+                val formatter = DateTimeFormatter.ofPattern("HH:mm")
+                if (startTime.isNotBlank() && endTime.isNotBlank()) {
+                    try {
+
+                        val start = LocalTime.parse(startTime, formatter)
+                        val end = LocalTime.parse(endTime, formatter)
+
+                        if (start >= end) {
+
+                            startTimeLayout.error ="Start must be before end"
+                            endTimeLayout.error = "End must be after start"
+                            val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
+                            startTimeLayout.startAnimation(shake)
+                            endTimeLayout.startAnimation(shake)
+                            isValid = false
+                        }else {
+                            startTimeLayout.error = null
+                            endTimeLayout.error = null
+                            isValid = true
+                        }
+                    } catch (e: DateTimeParseException) {
+                        startTimeLayout.error = "Invalid format"
+                        endTimeLayout.error = "Invalid format"
+                        val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
+                        startTimeLayout.startAnimation(shake)
+                        endTimeLayout.startAnimation(shake)
+
+                        isValid = false
+                    }
+                } else {
+                    // Clear errors if empty
+                    startTimeLayout.error = null
+                    endTimeLayout.error = null
+                }
+
+                // Only proceed if all fields are valid
+                if (!isValid) return@setOnClickListener
+
+                val task = Task(
+                    id = System.currentTimeMillis().toString(),
+                    title = title,
+                    description = description,
+                    date = date,
+                    startTime = startTime,
+                    endTime = endTime,
+                    isCompleted = false
+                )
+                notesViewModel.addTask(task)
+                notesViewModel.getTasksForDate(date)
+
+                ref.push().setValue(task).addOnFailureListener{
+                    Toast.makeText(requireContext(),"Could not add task to database",Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+
+        }
+        dialog.show()
+    }
+    private fun showTimePicker(onTimeSelected: (String) -> Unit) {
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
+            val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+            onTimeSelected(formattedTime)
+        }, hour, minute, true).show()
+
+
+    }
         private fun showEditTaskDialog(task: Task) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
-        val titleInput = dialogView.findViewById<EditText>(R.id.editTextTitle)
-        val descriptionInput = dialogView.findViewById<EditText>(R.id.editTextDescription)
 
-        titleInput.setText(task.title)
-        descriptionInput.setText(task.description)
+            val titleInputLayout = dialogView.findViewById<TextInputLayout>(R.id.titleInputLayout)
+            val titleInput = dialogView.findViewById<EditText>(R.id.editTextTitle)
+            val descriptionInput = dialogView.findViewById<EditText>(R.id.editTextDescription)
+            val startTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.startTimeLayout)
+            val endTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.endTimeLayout)
+            val startTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextStartTime)
+            val endTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextEndTime)
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Edit Task")
-            .setView(dialogView)
-            .setPositiveButton("Save") { _, _ ->
-                val updatedTitle = titleInput.text.toString()
-                val updatedDescription = descriptionInput.text.toString()
-                if (updatedTitle.isNotBlank()) {
-                    val updatedTask = task.copy(title = updatedTitle, description = updatedDescription)
+            titleInput.setText(task.title)
+            descriptionInput.setText(task.description)
+            startTimeInput.setText(task.startTime)
+            endTimeInput.setText(task.endTime)
+
+            //Setup time pickers
+            startTimeInput.setOnClickListener {
+                showTimePicker { time -> startTimeInput.setText(time) }
+            }
+            endTimeInput.setOnClickListener {
+                showTimePicker { time -> endTimeInput.setText(time) }
+            }
+
+            val dialog = AlertDialog.Builder(requireContext())
+                .setTitle("Edit Task")
+                .setView(dialogView)
+                .setPositiveButton("Save", null)
+                .setNegativeButton("Cancel", null)
+                .create()
+
+            dialog.setOnShowListener {
+                val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                saveButton.setOnClickListener {
+                    val title = titleInput.text.toString()
+                    val description = descriptionInput.text.toString()
+                    val startTime = startTimeInput.text.toString()
+                    val endTime = endTimeInput.text.toString()
+
+                    var isValid = true
+
+                    if (title.isBlank()) {
+                        titleInputLayout.error = "Title is required"
+                        val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
+                        titleInputLayout.startAnimation(shake)
+                        isValid = false
+                    } else {
+                        titleInputLayout.error = null
+                    }
+
+                    val formatter = DateTimeFormatter.ofPattern("HH:mm")
+                    if (startTime.isNotBlank() && endTime.isNotBlank()) {
+                        try {
+                            val start = LocalTime.parse(startTime, formatter)
+                            val end = LocalTime.parse(endTime, formatter)
+
+                            if (start >= end) {
+                                startTimeLayout.error = "Start must be before end"
+                                endTimeLayout.error = "End must be after start"
+                                val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
+                                startTimeLayout.startAnimation(shake)
+                                endTimeLayout.startAnimation(shake)
+                                isValid = false
+                            } else {
+                                startTimeLayout.error = null
+                                endTimeLayout.error = null
+                            }
+                        } catch (e: DateTimeParseException) {
+                            startTimeLayout.error = "Invalid time"
+                            endTimeLayout.error = "Invalid time"
+                            val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
+                            startTimeLayout.startAnimation(shake)
+                            endTimeLayout.startAnimation(shake)
+                            isValid = false
+                        }
+                    }
+
+                    if (!isValid) return@setOnClickListener
+
+                    // Create updated task with same ID
+                    val updatedTask = task.copy(
+                        title = title,
+                        description = description,
+                        startTime = startTime,
+                        endTime = endTime
+                    )
+
                     notesViewModel.updateTask(updatedTask)
-                    notesViewModel.getTasksForDate(updatedTask.date)
-                } else {
-                    Toast.makeText(requireContext(), "Title is required", Toast.LENGTH_SHORT).show()
+
+                    // Optionally update in Firebase too
+                    val query = ref.orderByChild("id").equalTo(task.id)
+                    query.addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            for (child in snapshot.children) {
+                                child.ref.setValue(updatedTask)
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            Toast.makeText(requireContext(), "Update failed: ${error.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+
+                    dialog.dismiss()
                 }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+
+            dialog.show()
+
     }
 
 

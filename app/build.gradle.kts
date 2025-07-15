@@ -78,6 +78,7 @@ dependencies {
 
     implementation ("com.applandeo:material-calendar-view:1.9.0-rc03")
     implementation("com.kizitonwose.calendar:view:2.6.1")
+    implementation ("com.google.android.flexbox:flexbox:3.0.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
