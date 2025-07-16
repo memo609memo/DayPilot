@@ -1,21 +1,22 @@
 package com.example.daypilot.ui.TasksView
 
-import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.daypilot.R
 import com.example.daypilot.databinding.FragmentTasksViewBinding
-import com.example.daypilot.ui.notes.*
-
+import com.example.daypilot.ui.notes.SwipeToActionCallback
+import com.example.daypilot.ui.notes.Task
+import com.example.daypilot.ui.notes.TaskAdapter
 
 
 class TasksViewFragment : Fragment() {
@@ -34,13 +35,18 @@ class TasksViewFragment : Fragment() {
         tasksViewModel = ViewModelProvider(this).get(TasksViewViewModel::class.java)
 
 
-        adapter = TaskAdapter { clickedTask ->
-            Toast.makeText(requireContext(), "Clicked Task: ${clickedTask.title}", Toast.LENGTH_SHORT).show()
-            val bundle = Bundle().apply {
-                putString("taskId", clickedTask.id)
+        adapter = TaskAdapter(
+            onEdit = {},
+            onDelete = {},
+            onComplete = {},
+            onItemClicked = { clickedTask ->
+                Toast.makeText(requireContext(), "Clicked Task: ${clickedTask.title}", Toast.LENGTH_SHORT).show()
+                val bundle = Bundle().apply {
+                    putString("taskId", clickedTask.id)
+                }
+                findNavController().navigate(R.id.action_navigation_tasksView_to_notifications, bundle)
             }
-            findNavController().navigate(R.id.action_navigation_tasksView_to_notifications, bundle)
-        }
+        )
 
         binding.recyclerTasksView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerTasksView.adapter = adapter

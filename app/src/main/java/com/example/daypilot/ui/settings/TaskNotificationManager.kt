@@ -60,7 +60,7 @@ object TaskNotificationManager {
         val task = snapshot.getValue(Task::class.java) ?: return
         val taskId = snapshot.key ?: return
 
-        if (task.completed) {
+        if (task.isCompleted) {
             cancelScheduledNotification(context, taskId)
         } else {
             scheduleTaskNotification(context, taskId, task.title, task.description, task.date, task.startTime)

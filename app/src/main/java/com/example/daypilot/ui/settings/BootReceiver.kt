@@ -31,7 +31,7 @@ class BootReceiver : BroadcastReceiver() {
                                 val task = taskSnapshot.getValue(Task::class.java)
                                 val taskId = taskSnapshot.key ?: continue
 
-                                if (task != null && !task.completed) {
+                                if (task != null && !task.isCompleted) {
                                     TaskNotificationManager.scheduleTaskNotification(
                                         context, taskId, task.title, task.description, task.date, task.startTime
                                     )
