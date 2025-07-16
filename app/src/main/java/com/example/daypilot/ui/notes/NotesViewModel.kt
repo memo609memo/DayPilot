@@ -26,7 +26,7 @@ class NotesViewModel : ViewModel() {
    val tasksForSelectedDate: LiveData<List<Task>>get()=_tasksForSelectedDate
 
    private val uid = FirebaseAuth.getInstance().currentUser?.uid
-   private val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+   private val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks")
    fun selectedDate(dateString: String)
    {
       _selectedDate.value = dateString
@@ -71,7 +71,7 @@ class NotesViewModel : ViewModel() {
       //_tasksForSelectedDate.value = taskMap[date]?.toList() ?: emptyList()
 
       val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-      val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+      val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks")
 
       ref.orderByChild("date").equalTo(date)
          .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -138,7 +138,7 @@ class NotesViewModel : ViewModel() {
 
    fun preloadAllTasks(onLoaded: () -> Unit) {
       val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-      val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+      val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks")
 
       ref.addListenerForSingleValueEvent(object : ValueEventListener {
          override fun onDataChange(snapshot: DataSnapshot) {

@@ -109,7 +109,7 @@ class NotificationsFragment : Fragment() {
 
                     val taskId = arguments?.getString("taskId") ?: return@setPositiveButton
                     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setPositiveButton
-                    val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+                    val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks")
 
                     ref.orderByChild("id").equalTo(taskId)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -150,7 +150,7 @@ class NotificationsFragment : Fragment() {
 
                 val taskId = arguments?.getString("taskId") ?: return@setOnClickListener
                 val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setOnClickListener
-                val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+                val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks")
 
                 ref.orderByChild("id").equalTo(taskId)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -226,7 +226,7 @@ class NotificationsFragment : Fragment() {
 
     private fun getTaskDataFromFirebase(taskId: String) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks")
 
         ref.orderByChild("id").equalTo(taskId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -284,7 +284,7 @@ class NotificationsFragment : Fragment() {
 
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
+        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks")
 
         val startTime = binding.startTimeTextView.text.toString()
         val endTime = binding.endTimeTextView.text.toString()
