@@ -205,6 +205,27 @@ class NotesViewModel : ViewModel() {
 
    }
 
+   fun rescheduleTask(task: Task, fromHour: Int, toHour: Int) {
+      val updatedTask = task.copy(startTime = "$toHour:00")
+      updateTask(updatedTask)
+
+      // sync to Firebase
+      val query = ref.orderByChild("id").equalTo(task.id)
+      query.addListenerForSingleValueEvent(object : ValueEventListener {
+         override fun onDataChange(snapshot: DataSnapshot) {
+            for (child in snapshot.children) {
+               child.ref.setValue(updatedTask)
+            }
+         }
+
+         override fun onCancelled(error: DatabaseError) {
+            Log.e("Firebase", "Update failed: ${error.message}")
+         }
+      })
+
+      getTasksForDate(task.date)
+   }
+
    }
 
 

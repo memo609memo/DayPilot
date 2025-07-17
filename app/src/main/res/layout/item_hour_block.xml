@@ -16,14 +16,22 @@
         android:layout_gravity="top" />
 
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewTasksHorizontal"
+    <FrameLayout
+        android:id="@+id/dragTarget"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:scrollbars="horizontal"
-        android:overScrollMode="ifContentScrolls"
-        android:clipToPadding="false"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp" />
+        android:minHeight="80dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewTasksHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="80dp"
+            android:scrollbars="horizontal"
+            android:overScrollMode="ifContentScrolls"
+            android:clipToPadding="false"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+    </FrameLayout>
 </LinearLayout>

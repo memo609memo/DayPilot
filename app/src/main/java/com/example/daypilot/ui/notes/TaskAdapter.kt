@@ -11,11 +11,19 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.daypilot.R
 import com.example.daypilot.databinding.ItemTaskBinding
 
+
+interface TaskDragListener {
+    fun onTaskMoved(task: Task, fromHour: Int, toHour: Int)
+}
 class TaskAdapter(
     private val onEdit: (Task) -> Unit,
     private val onDelete: (Task) -> Unit,
     private val onComplete: (Task) -> Unit,
-    private val onItemClicked: (Task) -> Unit
+    private val onItemClicked: (Task) -> Unit,
+    private val matchParentWidth: Boolean = false,
+    private val dragListener: TaskDragAndDropHelper? = null,
+    private val hourBlock: Int? = null,
+    private var startDragListener: ((View, Task) -> Unit)? = null
 ) : ListAdapter<Task, TaskAdapter.TaskViewHolder>(DiffCallBack()){
 
     inner class TaskViewHolder(val binding: ItemTaskBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -45,6 +53,14 @@ class TaskAdapter(
                 )
             }
 
+            val params = binding.cardViewTask.layoutParams
+            params.width = if (matchParentWidth) {
+                ViewGroup.LayoutParams.MATCH_PARENT
+            } else {
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            }
+            binding.cardViewTask.layoutParams = params
+
 
 
             binding.imageViewMore.setOnClickListener {
@@ -64,9 +80,16 @@ class TaskAdapter(
             binding.root.setOnClickListener {
                 onItemClicked(task)
             }
+
+            binding.cardViewTask.setOnLongClickListener {
+                startDragListener?.invoke(it, task)
+                true
+            }
         }
     }
-
+    fun setOnStartDragListener(listener: (View, Task) -> Unit) {
+        startDragListener = listener
+    }
 
     class DiffCallBack : DiffUtil.ItemCallback<Task>(){
 
