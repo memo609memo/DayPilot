@@ -159,7 +159,7 @@ class NotesViewModel : ViewModel() {
       })
    }
    fun buildHourBlocksFromTasks(tasks: List<Task>): List<HourBlock> {
-      val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+      val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
       val blocks = mutableMapOf<Int, MutableList<Task>>()
 
       for (task in tasks) {

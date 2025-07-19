@@ -30,6 +30,7 @@ import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.daysOfWeek
 import com.kizitonwose.calendar.view.MonthDayBinder
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
@@ -365,12 +366,12 @@ class NotesFragment : Fragment() {
                 }
 
                 // Validate time
-                val formatter = DateTimeFormatter.ofPattern("HH:mm")
+                val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
                 if (startTime.isNotBlank() && endTime.isNotBlank()) {
                     try {
 
-                        val start = LocalTime.parse(startTime, formatter)
-                        val end = LocalTime.parse(endTime, formatter)
+                        val start = LocalTime.parse(startTime.uppercase(), formatter)
+                        val end = LocalTime.parse(endTime.uppercase(), formatter)
 
                         if (start >= end) {
 
@@ -430,9 +431,17 @@ class NotesFragment : Fragment() {
         val minute = calendar.get(Calendar.MINUTE)
 
         TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
-            val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+            val cal = Calendar.getInstance()
+            cal.set(Calendar.HOUR_OF_DAY, selectedHour)
+            cal.set(Calendar.MINUTE, selectedMinute)
+
+            // Format to 12-hour with AM/PM
+            val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+            val formattedTime = formatter.format(cal.time)
+
             onTimeSelected(formattedTime)
-        }, hour, minute, true).show()
+
+        }, hour, minute, false).show()
 
 
     }
