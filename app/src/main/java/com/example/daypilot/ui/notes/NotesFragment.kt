@@ -54,6 +54,7 @@ class NotesFragment : Fragment() {
     val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
 
 
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
     {
         notesViewModel = ViewModelProvider(this).get(NotesViewModel::class.java)
@@ -102,6 +103,8 @@ class NotesFragment : Fragment() {
         binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewTasks.adapter = hourBlockAdapter
         ItemTouchHelper(dragHelper).attachToRecyclerView(binding.recyclerViewTasks)
+        val autoScrollDragListener = TaskAutoScrollDragListener(binding.recyclerViewTasks)
+        binding.root.setOnDragListener(autoScrollDragListener)
 
 
 
@@ -143,8 +146,6 @@ class NotesFragment : Fragment() {
                 }
             }
         }
-        // dont close dialog if no title is set
-
 
         notesViewModel.preloadAllTasks{
             binding.monthCalendarView.notifyCalendarChanged()
