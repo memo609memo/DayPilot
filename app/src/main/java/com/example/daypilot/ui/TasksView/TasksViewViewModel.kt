@@ -21,7 +21,7 @@ class TasksViewViewModel : ViewModel() {
     fun loadAllTasks() {
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
+        val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
 
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -44,7 +44,7 @@ class TasksViewViewModel : ViewModel() {
     fun addTask(task: Task) {
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
+        val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
 
         ref.orderByChild("id").equalTo(task.id)
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -71,7 +71,7 @@ class TasksViewViewModel : ViewModel() {
     fun deleteTask(task: Task) {
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
+        val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
 
         ref.orderByChild("id").equalTo(task.id)
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -92,7 +92,7 @@ class TasksViewViewModel : ViewModel() {
     fun updateTask(updatedTask: Task) {
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
+        val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
 
         ref.orderByChild("id").equalTo(updatedTask.id)
             .addListenerForSingleValueEvent(object : ValueEventListener {

@@ -51,7 +51,7 @@ class NotesFragment : Fragment() {
 
     //Michael: Adding this for realtime DB
     private val uid = FirebaseAuth.getInstance().currentUser?.uid
-    val ref = FirebaseDatabase.getInstance().getReference("users/$uid/Tasks")
+    val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
