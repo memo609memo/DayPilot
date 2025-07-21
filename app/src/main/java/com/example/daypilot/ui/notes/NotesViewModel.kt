@@ -1,5 +1,6 @@
 package com.example.daypilot.ui.notes
 
+import android.icu.util.Calendar
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -10,6 +11,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 
@@ -159,7 +161,7 @@ class NotesViewModel : ViewModel() {
       })
    }
    fun buildHourBlocksFromTasks(tasks: List<Task>): List<HourBlock> {
-      val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+      val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
       val blocks = mutableMapOf<Int, MutableList<Task>>()
 
       for (task in tasks) {
@@ -206,26 +208,62 @@ class NotesViewModel : ViewModel() {
    }
 
    fun rescheduleTask(task: Task, fromHour: Int, toHour: Int) {
-      val updatedTask = task.copy(startTime = "$toHour:00")
-      updateTask(updatedTask)
+      val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+      try {
+         val originalStart = task.startTime?.takeIf { it.isNotBlank() }?.let { formatter.parse(it) }
+         val originalEnd = task.endTime?.takeIf { it.isNotBlank() }?.let { formatter.parse(it) }
 
-      // sync to Firebase
-      val query = ref.orderByChild("id").equalTo(task.id)
-      query.addListenerForSingleValueEvent(object : ValueEventListener {
-         override fun onDataChange(snapshot: DataSnapshot) {
-            for (child in snapshot.children) {
-               child.ref.setValue(updatedTask)
+         val calendar = Calendar.getInstance()
+         val newStart: Date
+         val newEnd: Date
+
+         if (originalStart != null && originalEnd != null) {
+
+            val durationMillis = originalEnd.time - originalStart.time
+
+            calendar.time = originalStart
+            val originalMinutes = calendar.get(Calendar.MINUTE)
+
+            calendar.set(Calendar.HOUR_OF_DAY, toHour)
+            calendar.set(Calendar.MINUTE, originalMinutes)
+            newStart = calendar.time
+            newEnd = Date(newStart.time + durationMillis)
+
+         } else {
+            calendar.set(Calendar.HOUR_OF_DAY, toHour)
+            calendar.set(Calendar.MINUTE, 0)
+            newStart = calendar.time
+
+            calendar.set(Calendar.HOUR_OF_DAY, toHour + 1)
+            newEnd = calendar.time
+         }
+
+         val newStartTime = formatter.format(newStart)
+         val newEndTime = formatter.format(newEnd)
+
+         val updatedTask = task.copy(startTime = newStartTime, endTime = newEndTime)
+         updateTask(updatedTask)
+
+         // Update in Firebase
+         val query = ref.orderByChild("id").equalTo(task.id)
+         query.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+               for (child in snapshot.children) {
+                  child.ref.setValue(updatedTask)
+               }
             }
-         }
 
-         override fun onCancelled(error: DatabaseError) {
-            Log.e("Firebase", "Update failed: ${error.message}")
-         }
-      })
+            override fun onCancelled(error: DatabaseError) {
+               Log.e("Firebase", "Update failed: ${error.message}")
+            }
+         })
 
-      getTasksForDate(task.date)
+         getTasksForDate(task.date)
+
+      } catch (e: Exception) {
+         Log.e("Reschedule", "Error updating task time", e)
+      }
    }
-
    }
 
 

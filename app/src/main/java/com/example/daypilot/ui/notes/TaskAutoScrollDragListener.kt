@@ -46,28 +46,33 @@ class TaskAutoScrollDragListener(
                 return true
             }
             DragEvent.ACTION_DRAG_LOCATION -> {
-                val y = event.y.toInt()
+
+                val location = IntArray(2)
+                recyclerView.getLocationOnScreen(location)
+                val recyclerViewY = location[1]
+                val dragY = event.y.toInt()
+
+                val relativeY = dragY - recyclerViewY
                 val height = recyclerView.height
-                Log.d("TaskAutoScroll", "Drag location y=$y, recyclerView height=$height")
+
+                Log.d("TaskAutoScroll", "RelativeY=$relativeY, RecyclerView height=$height")
 
                 when {
-                    y < scrollThreshold -> startAutoScroll(-scrollSpeed)
-                    y > height - scrollThreshold -> startAutoScroll(scrollSpeed)
+                    relativeY < scrollThreshold -> startAutoScroll(-scrollSpeed)
+                    relativeY > height - scrollThreshold -> startAutoScroll(scrollSpeed)
                     else -> stopAutoScroll()
                 }
+
                 return true
             }
-            DragEvent.ACTION_DRAG_ENDED -> {
-                Log.d("TaskAutoScroll", "Drag ended")
-                stopAutoScroll()
-                return true
-            }
+
+            DragEvent.ACTION_DRAG_ENDED,
             DragEvent.ACTION_DROP -> {
-                Log.d("TaskAutoScroll", "Drag dropped")
                 stopAutoScroll()
                 return true
             }
+
+            else -> return false
         }
-        return false
     }
 }
