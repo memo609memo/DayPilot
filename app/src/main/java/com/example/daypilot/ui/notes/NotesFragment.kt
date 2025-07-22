@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.daypilot.R
@@ -54,6 +55,7 @@ class NotesFragment : Fragment() {
     val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
 
 
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
     {
         notesViewModel = ViewModelProvider(this).get(NotesViewModel::class.java)
@@ -62,7 +64,11 @@ class NotesFragment : Fragment() {
         val root = binding.root
 
 
-
+        val dragListener = object : TaskDragListener{
+            override fun onTaskMoved(task: Task, fromHour: Int, toHour: Int) {
+                notesViewModel.rescheduleTask(task, fromHour, toHour)
+            }
+        }
 
         hourBlockAdapter = HourBlockAdapter(
             onEdit = { task -> showEditTaskDialog(task) },
@@ -73,7 +79,7 @@ class NotesFragment : Fragment() {
                 binding.monthCalendarView.notifyDateChanged(date)
                 binding.weekCalendarView.notifyDateChanged(date)
             },
-            onComplete = { task -> // ✅ handle completion
+            onComplete = { task -> 
                 notesViewModel.markTaskAsCompleted(task)
                 notesViewModel.getTasksForDate(task.date)
                 val date = LocalDate.parse(task.date)
@@ -85,10 +91,23 @@ class NotesFragment : Fragment() {
                     putString("taskId", task.id)
                 }
                 findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
-            }
+            },
+            dragListener = dragListener,
+
+            dragHelper = null
         )
+
+        val dragHelper = TaskDragAndDropHelper(hourBlockAdapter, dragListener)
+        hourBlockAdapter.dragHelper = dragHelper
+
+
         binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewTasks.adapter = hourBlockAdapter
+        ItemTouchHelper(dragHelper).attachToRecyclerView(binding.recyclerViewTasks)
+        val autoScrollDragListener = TaskAutoScrollDragListener(binding.recyclerViewTasks)
+        binding.root.setOnDragListener(autoScrollDragListener)
+
+
 
         // Attach swipe callback
         /*val swipeCallback = SwipeToActionCallback(
@@ -128,8 +147,6 @@ class NotesFragment : Fragment() {
                 }
             }
         }
-        // dont close dialog if no title is set
-
 
         notesViewModel.preloadAllTasks{
             binding.monthCalendarView.notifyCalendarChanged()
@@ -495,7 +512,7 @@ class NotesFragment : Fragment() {
                         titleInputLayout.error = null
                     }
 
-                    val formatter = DateTimeFormatter.ofPattern("HH:mm")
+                    val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
                     if (startTime.isNotBlank() && endTime.isNotBlank()) {
                         try {
                             val start = LocalTime.parse(startTime, formatter)

@@ -1,5 +1,7 @@
 package com.example.daypilot.ui.notes
 
+import android.content.ClipData
+import android.view.DragEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,7 +15,9 @@ import com.example.daypilot.R
 class HourBlockAdapter(private val onEdit: (Task) -> Unit,
                        private val onDelete: (Task) -> Unit,
                        private val onComplete: (Task) -> Unit,
-                       private val onTaskClick: (Task) -> Unit
+                       private val onTaskClick: (Task) -> Unit,
+                       private val dragListener: TaskDragListener,
+                       var dragHelper: TaskDragAndDropHelper? = null
 ): ListAdapter<HourBlock, HourBlockAdapter.HourBlockViewHolder>(DiffCallBack()) {
 
     var showEmptyMessage = false
@@ -40,12 +44,50 @@ class HourBlockAdapter(private val onEdit: (Task) -> Unit,
             else -> "${hourBlock.hour}:00"
         }
 
-        // Set up horizontal RecyclerView for tasks
-        val taskAdapter = TaskAdapter(onEdit = onEdit, onDelete = onDelete, onComplete = onComplete, onItemClicked = onTaskClick)
-        holder.taskRecyclerView.layoutManager = LinearLayoutManager(holder.itemView.context, LinearLayoutManager.HORIZONTAL, false)
-        holder.taskRecyclerView.adapter = taskAdapter
-        holder.taskRecyclerView.setHasFixedSize(true)
+        val taskAdapter = TaskAdapter(
+            onEdit = onEdit,
+            onDelete = onDelete,
+            onComplete = onComplete,
+            onItemClicked = onTaskClick,
+            dragListener = null,
+            hourBlock = hourBlock.hour
+        )
+
+        holder.taskRecyclerView.apply {
+            layoutManager = LinearLayoutManager(holder.itemView.context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = taskAdapter
+            setHasFixedSize(true)
+        }
+
         taskAdapter.submitList(hourBlock.tasks)
+
+
+        holder.itemView.setOnDragListener { _, event ->
+            when (event.action) {
+                DragEvent.ACTION_DROP -> {
+                    val dragData = event.localState as? Pair<Task, Int> ?: return@setOnDragListener true
+                    val task = dragData.first
+                    val fromHour = dragData.second
+                    val toHour = hourBlock.hour
+                    if (fromHour != toHour) {
+                        dragListener.onTaskMoved(task, fromHour, toHour)
+                    }
+                    true
+                }
+                else -> true
+            }
+        }
+
+        taskAdapter.setOnStartDragListener { view, task ->
+            val dragShadow = View.DragShadowBuilder(view)
+            val dragData = Pair(task, hourBlock.hour)
+            view.startDragAndDrop(
+                ClipData.newPlainText("taskId", task.id),
+                dragShadow,
+                dragData,
+                0
+            )
+        }
     }
 
 

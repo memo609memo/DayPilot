@@ -45,7 +45,9 @@ class TasksViewFragment : Fragment() {
                     putString("taskId", clickedTask.id)
                 }
                 findNavController().navigate(R.id.action_navigation_tasksView_to_notifications, bundle)
-            }
+            },
+            matchParentWidth = true,
+
         )
 
         binding.recyclerTasksView.layoutManager = LinearLayoutManager(requireContext())
