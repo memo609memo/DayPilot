@@ -4,79 +4,43 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.applandeo.materialcalendarview.EventDay
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import java.util.Collections.emptyList
-
+import com.google.firebase.database.*
 
 class NotesViewModel : ViewModel() {
-   private  val  _selectedDate = MutableLiveData<String>()
+   private val _selectedDate = MutableLiveData<String>()
    val selectedDate: LiveData<String> = _selectedDate
+
    private val taskMap = mutableMapOf<String, MutableList<Task>>()
-
-
    private val _tasksForSelectedDate = MutableLiveData<List<Task>>()
 
    private var currentSelectedDate: String = ""
 
-   val tasksForSelectedDate: LiveData<List<Task>>get()=_tasksForSelectedDate
-   fun selectedDate(dateString: String)
-   {
+   val tasksForSelectedDate: LiveData<List<Task>> get() = _tasksForSelectedDate
+
+   fun selectedDate(dateString: String) {
       _selectedDate.value = dateString
    }
 
-
-
-
+   // need to make edit to fit recycler view so list shows
    fun addTask(task: Task) {
-      val dateTasks = taskMap.getOrPut(task.date) { mutableListOf() }
+      val normalizedDateForList = task.date.take(10)
+      val dateTasks = taskMap.getOrPut(normalizedDateForList) { mutableListOf() }
       dateTasks.add(task)
-
-      Log.d("TaskSaveDebug", "Task added: ${task.title} on ${task.date}")
-
-      if (currentSelectedDate == task.date) {
+      if (currentSelectedDate == normalizedDateForList) {
          _tasksForSelectedDate.value = dateTasks.toList()
       }
    }
+
+
    fun hasTasksForDate(date: String): Boolean {
       return taskMap[date]?.isNotEmpty() == true
    }
 
-
-   fun getTasksForDate(date: String){
+   fun getTasksForDate(date: String) {
       currentSelectedDate = date
       _selectedDate.value = date
-
-      //Michael: Adding functionality for the tasks to get loaded from firebase instead
-      //_tasksForSelectedDate.value = taskMap[date]?.toList() ?: emptyList()
-
-      val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-      val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
-
-      ref.orderByChild("date").equalTo(date)
-         .addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-               val taskList = mutableListOf<Task>()
-               for(taskSnapshot in snapshot.children){
-                  val task = taskSnapshot.getValue(Task::class.java)
-                  task?.let { taskList.add(it) }
-               }
-
-               _tasksForSelectedDate.value = taskList
-
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-               Log.e("Error", error.toString())
-            }
-
-         })
-
-
+      _tasksForSelectedDate.value = taskMap[date]?.toList() ?: emptyList()
    }
 
    fun deleteTask(task: Task) {
@@ -99,5 +63,27 @@ class NotesViewModel : ViewModel() {
       }
    }
 
+   //load task if on firebase
+   fun loadAllTasksOnceFromFirebase(onComplete: (() -> Unit)? = null) {    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+      val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
 
+      ref.addListenerForSingleValueEvent(object : ValueEventListener {
+         override fun onDataChange(snapshot: DataSnapshot) {
+            Log.d("DebugCheck", "Firebase data snapshot has ${snapshot.childrenCount} tasks")
+            for (taskSnapshot in snapshot.children) {
+               val task = taskSnapshot.getValue(Task::class.java)
+               task?.let {
+                  addTask(it)
+                  Log.d("DebugCheck", "Loaded task: ${it.title} on ${it.date}")
+               }
+            }
+            onComplete?.invoke()
+         }
+
+         override fun onCancelled(error: DatabaseError) {
+            Log.e("DebugCheck", "Error loading tasks: ${error.message}")
+            onComplete?.invoke()
+         }
+      })
+   }
 }
