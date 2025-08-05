@@ -47,6 +47,7 @@ class TaskAutoScrollDragListener(
             }
             DragEvent.ACTION_DRAG_LOCATION -> {
 
+
                 val location = IntArray(2)
                 recyclerView.getLocationOnScreen(location)
                 val recyclerViewY = location[1]

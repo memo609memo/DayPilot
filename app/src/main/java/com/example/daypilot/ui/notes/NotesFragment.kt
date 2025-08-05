@@ -8,7 +8,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
+import android.widget.ArrayAdapter
 import android.widget.EditText
+import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -343,6 +345,12 @@ class NotesFragment : Fragment() {
         val endTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.endTimeLayout)
         val startTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextStartTime)
         val endTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextEndTime)
+        val prioritySpinner = dialogView.findViewById<Spinner>(R.id.spinnerPriority)
+
+        //Populate Spinner
+        val priorityList = listOf("Select Priority (Optional)") + Priority.values().map { it.name }
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, priorityList)
+            prioritySpinner.adapter = adapter
 
         // Set up TimePickers
         startTimeInput.setOnClickListener {
@@ -366,6 +374,13 @@ class NotesFragment : Fragment() {
                 val description = descriptionInput.text.toString()
                 val startTime = startTimeInput.text.toString()
                 val endTime = endTimeInput.text.toString()
+
+                val selectedPosition = prioritySpinner.selectedItemPosition
+                val selectedPriority = if (selectedPosition == 0) {
+                    Priority.DEFAULT // default if none selected
+                } else {
+                    Priority.values()[selectedPosition - 1]
+                }
 
                 var isValid = true
 
@@ -428,7 +443,8 @@ class NotesFragment : Fragment() {
                     date = date,
                     startTime = startTime,
                     endTime = endTime,
-                    isCompleted = false
+                    isCompleted = false,
+                    priority = selectedPriority
                 )
                 notesViewModel.addTask(task)
                 notesViewModel.getTasksForDate(date)

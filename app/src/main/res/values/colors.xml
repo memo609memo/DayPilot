@@ -22,4 +22,11 @@
     <color name="text_color">#FF000000</color>
     <color name="dark_text_color">#FFFFFFFF</color>
     <color name="completedTaskBackground">#D6EAF8</color>
+
+
+
+    <!-- Priority Colors -->
+    <color name="priority_default">#C5D2CD</color>
+    <color name="priority_important">#FFA500</color>
+    <color name="priority_urgent">#FF4500</color>
 </resources>
