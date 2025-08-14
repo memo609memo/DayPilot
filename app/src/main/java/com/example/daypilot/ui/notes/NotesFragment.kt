@@ -34,7 +34,9 @@ import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.daysOfWeek
 import com.kizitonwose.calendar.view.MonthDayBinder
 import java.text.SimpleDateFormat
+import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -354,10 +356,15 @@ class NotesFragment : Fragment() {
 
         // Set up TimePickers
         startTimeInput.setOnClickListener {
-            showTimePicker { time -> startTimeInput.setText(time) }
+            showTimePicker(isStartTime = true) { times ->
+                startTimeInput.setText(times.first)
+                times.second?.let { endTimeInput.setText(it) }
+            }
         }
         endTimeInput.setOnClickListener {
-            showTimePicker { time -> endTimeInput.setText(time) }
+            showTimePicker(isStartTime = false) { times ->
+                endTimeInput.setText(times.first) // only end time
+            }
         }
 
        val dialog = AlertDialog.Builder(requireContext())
@@ -402,21 +409,29 @@ class NotesFragment : Fragment() {
                 if (startTime.isNotBlank() && endTime.isNotBlank()) {
                     try {
 
-                        val start = LocalTime.parse(startTime.uppercase(), formatter)
-                        val end = LocalTime.parse(endTime.uppercase(), formatter)
+                        val today = LocalDate.now()
+                        val start = LocalDateTime.of(today, LocalTime.parse(startTime.uppercase(), formatter))
+                        var end = LocalDateTime.of(today, LocalTime.parse(endTime.uppercase(), formatter))
 
-                        if (start >= end) {
+                        // If end is before start, assume next day
+                        if (end.isBefore(start)) {
+                            end = end.plusDays(1)
+                        }
 
-                            startTimeLayout.error ="Start must be before end"
-                            endTimeLayout.error = "End must be after start"
+                        val durationMinutes = Duration.between(start, end).toMinutes()
+
+                        if (durationMinutes <= 0 || durationMinutes > 8 * 60) {
+
+                            startTimeLayout.error = "Start must be before end"
+                            endTimeLayout.error = "End must be after start (max 8h)"
                             val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
                             startTimeLayout.startAnimation(shake)
                             endTimeLayout.startAnimation(shake)
                             isValid = false
-                        }else {
+                        } else {
+
                             startTimeLayout.error = null
                             endTimeLayout.error = null
-                            isValid = true
                         }
                     } catch (e: DateTimeParseException) {
                         startTimeLayout.error = "Invalid format"
@@ -458,7 +473,7 @@ class NotesFragment : Fragment() {
         }
         dialog.show()
     }
-    private fun showTimePicker(onTimeSelected: (String) -> Unit) {
+    private fun showTimePicker(isStartTime: Boolean, onTimeSelected: (Pair<String, String?>) -> Unit) {
         val calendar = Calendar.getInstance()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
         val minute = calendar.get(Calendar.MINUTE)
@@ -472,8 +487,15 @@ class NotesFragment : Fragment() {
             val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
             val formattedTime = formatter.format(cal.time)
 
-            onTimeSelected(formattedTime)
+            val formattedStart = formatter.format(cal.time)
 
+            if (isStartTime) {
+                cal.add(Calendar.HOUR_OF_DAY, 1)
+                val formattedEnd = formatter.format(cal.time)
+                onTimeSelected(Pair(formattedStart, formattedEnd))
+            } else {
+                onTimeSelected(Pair(formattedStart, null))
+            }
         }, hour, minute, false).show()
 
 
@@ -494,13 +516,7 @@ class NotesFragment : Fragment() {
             startTimeInput.setText(task.startTime)
             endTimeInput.setText(task.endTime)
 
-            //Setup time pickers
-            startTimeInput.setOnClickListener {
-                showTimePicker { time -> startTimeInput.setText(time) }
-            }
-            endTimeInput.setOnClickListener {
-                showTimePicker { time -> endTimeInput.setText(time) }
-            }
+
 
             val dialog = AlertDialog.Builder(requireContext())
                 .setTitle("Edit Task")
