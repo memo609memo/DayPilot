@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
@@ -17,6 +18,7 @@ import com.example.daypilot.databinding.FragmentTasksViewBinding
 import com.example.daypilot.ui.notes.SwipeToActionCallback
 import com.example.daypilot.ui.notes.Task
 import com.example.daypilot.ui.notes.TaskAdapter
+import com.example.daypilot.ui.notes.isDarkMode
 
 
 class TasksViewFragment : Fragment() {
@@ -86,7 +88,7 @@ class TasksViewFragment : Fragment() {
         val titleInput = dialogView.findViewById<EditText>(R.id.editTextTitle)
         val descriptionInput = dialogView.findViewById<EditText>(R.id.editTextDescription)
 
-        AlertDialog.Builder(requireContext())
+        val alertDialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
             .setTitle("Add Task")
             .setView(dialogView)
             .setPositiveButton("Save") { _, _ ->
@@ -102,7 +104,43 @@ class TasksViewFragment : Fragment() {
                 }
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        alertDialog.setOnShowListener {
+            val saveButton = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            val cancelButton = alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+
+            val isDark = requireContext().isDarkMode()
+            if (!isDark) {
+                saveButton.setTextColor(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.text_color
+                    )
+                )
+                cancelButton.setTextColor(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.text_color
+                    )
+                )
+            } else {
+                saveButton.setTextColor(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.dark_text_color
+                    )
+                )
+                cancelButton.setTextColor(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        R.color.dark_text_color
+                    )
+                )
+            }
+        }
+
+        alertDialog.show()
     }
 
     override fun onDestroyView() {
