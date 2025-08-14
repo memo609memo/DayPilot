@@ -7,7 +7,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".ui.notifications.NotificationsFragment"
-        android:background="@color/backgroundColor">
+        android:background="?attr/screens_background">
 
     <EditText
             android:background="@drawable/rounded_edittext_corners"
@@ -145,7 +145,7 @@
             android:id="@+id/endTimeTextView"
             android:textSize="18dp"/>
     <ScrollView
-            android:background="@color/white"
+            android:background="?attr/calendars_background"
             android:layout_centerHorizontal="true"
             android:layout_width="340dp"
             android:layout_height="540dp"
@@ -174,14 +174,27 @@
             android:scaleType="fitCenter"
     />
     <Button
+            android:layout_width="100dp"
+            android:text="Cancel"
+            android:id="@+id/cancelButton"
+            android:layout_height="50dp"
+            android:layout_marginEnd="160dp"
+            android:layout_marginTop="3dp"
+            android:textColor="?attr/texts_color"
+            android:backgroundTint="?attr/buttons_background"
+            android:layout_below="@+id/scrollView2"
+            android:layout_alignParentEnd="true"/>
+    <Button
             android:text="Save"
             android:id="@+id/saveButton"
             android:layout_width="100dp"
             android:layout_height="50dp"
             android:layout_below="@+id/scrollView2"
+        android:textColor="?attr/texts_color"
+            android:backgroundTint="?attr/buttons_background"
             android:layout_alignParentEnd="true"
             android:layout_marginTop="3dp"
-            android:layout_marginEnd="260dp"
+            android:layout_marginEnd="275dp"
             android:scaleType="fitCenter"/>
 
 </RelativeLayout>

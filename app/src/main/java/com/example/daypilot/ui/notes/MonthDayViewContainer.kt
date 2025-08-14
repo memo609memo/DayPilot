@@ -1,7 +1,13 @@
 package com.example.daypilot.ui.notes
+import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Typeface
+import android.os.Build
+import android.util.TypedValue
 import android.view.View
 import android.widget.TextView
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import com.example.daypilot.R
 import com.kizitonwose.calendar.core.CalendarDay
@@ -15,6 +21,7 @@ class MonthDayViewContainer(view: View) : ViewContainer(view) {
 
     lateinit var day: CalendarDay
 
+    @RequiresApi(Build.VERSION_CODES.R)
     fun bind(
         newDay: CalendarDay,
         selectedDate: CalendarDay?,
@@ -34,9 +41,21 @@ class MonthDayViewContainer(view: View) : ViewContainer(view) {
 
         dayNumberText.setTextColor(
             when {
-                isSelected -> ContextCompat.getColor(view.context, android.R.color.white)
-                isToday -> ContextCompat.getColor(view.context, R.color.purple_500)
-                else -> ContextCompat.getColor(view.context, android.R.color.black)
+
+                !view.context.resources.configuration.isNightModeActive && isSelected -> ContextCompat.getColor(view.context, android.R.color.white)
+                view.context.resources.configuration.isNightModeActive && isSelected -> ContextCompat.getColor(view.context, android.R.color.black)
+                !view.context.resources.configuration.isNightModeActive && isToday -> ContextCompat.getColor(view.context, R.color.today)
+                view.context.resources.configuration.isNightModeActive && isToday -> ContextCompat.getColor(view.context, R.color.dark_today)
+                else -> {
+
+                    if (!view.context.resources.configuration.isNightModeActive) {
+                        ContextCompat.getColor(view.context, R.color.text_color)
+                    }
+                    else {
+                        ContextCompat.getColor(view.context, R.color.dark_text_color)
+                    }
+
+                }
             }
         )
         dayNumberText.setTypeface(null, if (isSelected || isToday) Typeface.BOLD else Typeface.NORMAL)
@@ -45,4 +64,9 @@ class MonthDayViewContainer(view: View) : ViewContainer(view) {
             onClick(day)
         }
     }
+}
+
+fun Context.isDarkMode(): Boolean {
+    val currentNightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+    return currentNightMode == Configuration.UI_MODE_NIGHT_YES
 }

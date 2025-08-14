@@ -5,4 +5,9 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <style name="CustomAlertDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="android:background">?attr/screens_background</item>
+        <item name="android:textColorPrimary">?attr/texts_color</item>
+    </style>
+
 </resources>

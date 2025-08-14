@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.text.InputType
 import android.util.Log
+import android.view.Gravity
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -40,6 +41,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.example.daypilot.SplashActivity
+import com.example.daypilot.ui.notes.isDarkMode
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -110,18 +112,51 @@ class SettingsFragment : Fragment() {
 
         view.findViewById<Button>(R.id.btnDeleteAccount).setOnClickListener {
             val input = EditText(requireContext())
-            input.hint = "Type DELETE"
+            input.hint = "Type DELETE to delete your account."
             input.inputType = InputType.TYPE_TEXT_VARIATION_LONG_MESSAGE
 
-            val alertDialog = AlertDialog.Builder(requireContext())
+            val alertDialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
                 .setTitle("Delete Account? This cannot be undone.")
                 .setView(input)
-                .setMessage("Type DELETE to confirm and delete your account.")
                 .setPositiveButton("Confirm", null)
                 .setNegativeButton("Cancel") { dialog, _ ->
                     dialog.dismiss()
                 }
                 .create()
+            alertDialog.setOnShowListener {
+                val positive = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                val negative = alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+
+                val isDark = requireContext().isDarkMode()
+                if (!isDark) {
+                    positive.setTextColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            R.color.text_color
+                        )
+                    )
+                    negative.setTextColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            R.color.text_color
+                        )
+                    )
+                } else {
+                    positive.setTextColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            R.color.dark_text_color
+                        )
+                    )
+                    negative.setTextColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            R.color.dark_text_color
+                        )
+                    )
+                }
+            }
+
 
             alertDialog.show()
 
@@ -143,12 +178,17 @@ class SettingsFragment : Fragment() {
         }
 
         view.findViewById<Button>(R.id.btnReportProblem).setOnClickListener {
-            val input = EditText(context)
-            input.hint = "Please describe the problem."
-            input.inputType = InputType.TYPE_TEXT_VARIATION_LONG_MESSAGE
+            val input = EditText(context).apply {
+                hint = "Please describe the problem."
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                isSingleLine = false
+                minLines = 5
+                maxLines = 10
+                gravity = Gravity.BOTTOM or Gravity.START
+                setHorizontallyScrolling(false)
+            }
 
-
-            AlertDialog.Builder(requireContext())
+            val reportDialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
                 .setTitle("Report a Problem")
                 .setView(input)
                 .setPositiveButton("Submit") { dialog, _ ->
@@ -167,8 +207,40 @@ class SettingsFragment : Fragment() {
                     dialog.dismiss()
                 }
                 .create()
-                .show()
+            reportDialog.setOnShowListener {
+                val positive = reportDialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                val negative = reportDialog.getButton(AlertDialog.BUTTON_NEGATIVE)
 
+                val isDark = requireContext().isDarkMode()
+                if (!isDark) {
+                    positive.setTextColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            R.color.text_color
+                        )
+                    )
+                    negative.setTextColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            R.color.text_color
+                        )
+                    )
+                } else {
+                    positive.setTextColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            R.color.dark_text_color
+                        )
+                    )
+                    negative.setTextColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            R.color.dark_text_color
+                        )
+                    )
+                }
+            }
+            reportDialog.show()
         }
 
 
@@ -371,11 +443,15 @@ fun cancelScheduledNotifications(context: Context) {
                     PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
                 )
 
-                alarmManager.cancel(pendingIntent)
+                if (pendingIntent != null) {
+                    alarmManager.cancel(pendingIntent)
+                }
                 Log.d("Debugging Log", "Alarm canceled")
             }
 
             NotificationManagerCompat.from(context).cancelAll()
+
+            ref.removeEventListener(this)
         }
 
         override fun onCancelled(error: DatabaseError) {

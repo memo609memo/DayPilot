@@ -75,17 +75,15 @@ class MainActivity : AppCompatActivity() {
         // menu should be considered as top level destinations.
         val appBarConfiguration = AppBarConfiguration(
             setOf(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notes, R.id.taskViewFragment
+                R.id.navigation_notes, R.id.taskViewFragment, R.id.settingsFragment
             )
         )
-        setupActionBarWithNavController(navController, appBarConfiguration)
+        //setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.settingsFragment -> {
-                    binding.navView.visibility = View.GONE
-                } R.id.navigation_notifications -> {
+                R.id.navigation_notifications -> {
                 binding.navView.visibility = View.GONE
                 }else -> {
                     navView.visibility = View.VISIBLE

@@ -3,6 +3,7 @@ package com.example.daypilot.ui.notes
 
 import android.app.TimePickerDialog
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -59,6 +60,7 @@ class NotesFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
     {
         notesViewModel = ViewModelProvider(this).get(NotesViewModel::class.java)
+        val isDark = requireContext().isDarkMode()
 
         _binding = FragmentNotesBinding.inflate(inflater, container, false)
         val root = binding.root
@@ -188,9 +190,18 @@ class NotesFragment : Fragment() {
                     // Normal styling for current month
                     container.dayNumberText.setTextColor(
                         when {
-                            isSelected -> ContextCompat.getColor(requireContext(), android.R.color.white)
-                            isToday -> ContextCompat.getColor(requireContext(), R.color.purple_500)
-                            else -> ContextCompat.getColor(requireContext(), android.R.color.black)
+                            !isDark && isSelected -> resources.getColor(android.R.color.white, null)
+                            isDark && isSelected -> resources.getColor(android.R.color.black, null)
+                            !isDark && isToday -> resources.getColor(R.color.today, null)
+                            isDark && isToday -> resources.getColor(R.color.dark_today, null)
+                            else -> {
+                                if (!isDark) {
+                                    resources.getColor(android.R.color.black, null)
+                                }
+                                else {
+                                    resources.getColor(android.R.color.white, null)
+                                }
+                            }
                         }
                     )
                     container.dayNumberText.setTypeface(null, if (isSelected || isToday) Typeface.BOLD else Typeface.NORMAL)
@@ -212,7 +223,12 @@ class NotesFragment : Fragment() {
                     }
                 } else {
                     // Disabled styling for days outside current month
-                    container.dayNumberText.setTextColor(ContextCompat.getColor(requireContext(), R.color.disabled_day))
+                    if (!isDark) {
+                        container.dayNumberText.setTextColor(ContextCompat.getColor(requireContext(), R.color.disabled_day))
+                    }
+                    else {
+                        container.dayNumberText.setTextColor(ContextCompat.getColor(requireContext(), R.color.dark_disabled_day))
+                    }
                     container.dayNumberText.setTypeface(null, Typeface.NORMAL)
 
                     container.selectedBackground.visibility = View.GONE
@@ -264,9 +280,19 @@ class NotesFragment : Fragment() {
 
                 container.dayNumberText.setTextColor(
                     when {
-                        isSelected -> resources.getColor(android.R.color.white, null)
-                        isToday -> resources.getColor(R.color.purple_500, null)
-                        else -> resources.getColor(android.R.color.black, null)
+
+                        !isDark && isSelected -> resources.getColor(android.R.color.white, null)
+                        isDark && isSelected -> resources.getColor(android.R.color.black, null)
+                        !isDark && isToday -> resources.getColor(R.color.today, null)
+                        isDark && isToday -> resources.getColor(R.color.dark_today, null)
+                        else -> {
+                            if (!isDark) {
+                                resources.getColor(android.R.color.black, null)
+                            }
+                            else {
+                                resources.getColor(android.R.color.white, null)
+                            }
+                        }
                     }
                 )
 
@@ -352,15 +378,29 @@ class NotesFragment : Fragment() {
             showTimePicker { time -> endTimeInput.setText(time) }
         }
 
-       val dialog = AlertDialog.Builder(requireContext())
+       val dialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
             .setTitle("Add Task")
             .setView(dialogView)
             .setPositiveButton("Save", null)
            .setNegativeButton("Cancel", null)
            .create()
 
+
+
         dialog.setOnShowListener{
             val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            val cancelButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+
+            val isDark = requireContext().isDarkMode()
+            if (!isDark) {
+                saveButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_color))
+                cancelButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_color))
+            }
+            else {
+                saveButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.dark_text_color))
+                cancelButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.dark_text_color))
+            }
+
             saveButton.setOnClickListener{
                 val title = titleInput.text.toString()
                 val description = descriptionInput.text.toString()
@@ -433,9 +473,6 @@ class NotesFragment : Fragment() {
                 notesViewModel.addTask(task)
                 notesViewModel.getTasksForDate(date)
 
-                ref.push().setValue(task).addOnFailureListener{
-                    Toast.makeText(requireContext(),"Could not add task to database",Toast.LENGTH_SHORT).show()
-                }
                 dialog.dismiss()
             }
 
@@ -592,3 +629,5 @@ private fun formatHeaderDate(date: LocalDate): String {
     val formatter = DateTimeFormatter.ofPattern("MMMM d", Locale.getDefault())
     return date.format(formatter)
 }
+
+

@@ -10,9 +10,10 @@
     <color name="inputTextBox">#C5D2CD</color>
     <color name="navBarLoginButton">#9DB1AA</color>
     <color name="backgroundColor">#E2DFDA</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="dot_color">#FF4081</color>
+    <color name="dark_dot_color">#FF80AB</color>
     <color name="disabled_day">#CCCCCC</color>
-
+    <color name="dark_disabled_day">#FF666666</color>
     <color name="toggle_background">#FFC6D2CD</color>
     <color name="button_background">#FF9FB1AA</color>
     <color name="screen_background">#FFE2DFDA</color>
@@ -22,4 +23,10 @@
     <color name="text_color">#FF000000</color>
     <color name="dark_text_color">#FFFFFFFF</color>
     <color name="completedTaskBackground">#D6EAF8</color>
+    <color name="calendar_background">#FFEEF2EF</color>
+    <color name="dark_calendar_background">#FF2F3B35</color>
+    <color name="selector_color">#FF26A69A</color>
+    <color name="dark_selector_color">#FF4DB6AC</color>
+    <color name="today">#FFFF8A65</color>
+    <color name="dark_today">#FFFFAB91</color>
 </resources>

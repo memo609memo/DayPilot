@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.example.daypilot.databinding.FragmentNotificationsBinding
 import com.example.daypilot.ui.notes.Task
 import com.google.firebase.auth.FirebaseAuth
@@ -19,6 +20,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.time.LocalDate
 import java.util.Calendar
+import com.google.firebase.functions.FirebaseFunctions
 
 class NotificationsFragment : Fragment() {
 
@@ -61,7 +63,7 @@ class NotificationsFragment : Fragment() {
                 return@setOnClickListener
             }
 
-
+            updateRepeatingTasks()
 
             val startTimeTextBox = binding.startTimeTextView.text.toString()
             val endTimeTextBox = binding.endTimeTextView.text.toString()
@@ -81,6 +83,16 @@ class NotificationsFragment : Fragment() {
             if (taskId != null) {
                 updateTaskInFirebase(taskId, newTitle, updatedDescription,newDate)
             }
+
+            findNavController().previousBackStackEntry
+                ?.savedStateHandle
+                ?.set("refreshNeeded", true)
+
+            findNavController().popBackStack()
+        }
+
+        binding.cancelButton.setOnClickListener {
+            findNavController().popBackStack()
         }
 
         binding.taskDate.setOnClickListener {
@@ -312,4 +324,17 @@ class NotificationsFragment : Fragment() {
                 }
             })
     }
+}
+
+fun updateRepeatingTasks() {
+
+    val functions = FirebaseFunctions.getInstance()
+
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+
+    val data = hashMapOf("uid" to uid)
+
+    functions
+        .getHttpsCallable("setRepeatingTasksOnCall")
+        .call(data)
 }

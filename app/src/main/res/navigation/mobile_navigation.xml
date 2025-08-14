@@ -3,7 +3,7 @@
             xmlns:app="http://schemas.android.com/apk/res-auto"
             xmlns:tools="http://schemas.android.com/tools"
             android:id="@+id/mobile_navigation"
-            app:startDestination="@+id/navigation_home">
+            app:startDestination="@+id/navigation_notes">
 
     <include app:graph="@navigation/auth_navigation"/>
 
@@ -13,7 +13,7 @@
             android:label="@string/title_home"
             tools:layout="@layout/fragment_home">
             <action
-                android:id="@+id/action_navigation_home_to_settingsFragment"
+                android:id="@+id/action_navigation_notes_to_settingsFragment"
                 app:destination="@id/settingsFragment"/>
     </fragment>
 
@@ -37,6 +37,9 @@
             <action
                 android:id="@+id/action_navigation_notes_to_notifications"
                 app:destination="@+id/navigation_notifications"/>
+            <action
+                android:id="@+id/action_navigation_notes_to_settingsFragment"
+                app:destination="@id/settingsFragment"/>
     </fragment>
     <fragment
             android:id="@+id/settingsFragment"

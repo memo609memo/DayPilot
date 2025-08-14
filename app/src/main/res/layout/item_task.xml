@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:id="@+id/cardViewTask"
     android:layout_height="wrap_content"
+    android:background="?attr/toggles_background"
     android:layout_margin="8dp"
     card_view:cardCornerRadius="12dp"
     card_view:cardElevation="4dp"
@@ -15,6 +16,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:background="?attr/toggles_background"
         android:padding="12dp">
 
         <TextView
@@ -23,6 +25,7 @@
             android:layout_height="wrap_content"
             android:textStyle="bold"
             android:textSize="16sp"
+            android:textColor="?attr/texts_color"
             android:maxLines="1"
             android:ellipsize="end"/>
         <TextView
@@ -30,7 +33,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="✓ Task Completed"
-            android:textColor="@color/text_color"
+            android:textColor="?attr/texts_color"
             android:textStyle="bold"
             android:visibility="gone"
             android:paddingTop="4dp"/>
@@ -38,6 +41,7 @@
             android:id="@+id/textViewDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="?attr/texts_color"
             android:textSize="14sp"
             android:maxLines="1"
             android:ellipsize="end"
@@ -49,7 +53,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="12sp"
-            android:textColor="@android:color/darker_gray"
+            android:textColor="?attr/texts_color"
             android:paddingTop="2dp" />
 
         <ImageView

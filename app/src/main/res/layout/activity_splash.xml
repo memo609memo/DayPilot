@@ -5,14 +5,14 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#9DB1AA"
+        android:background="?attr/screens_background"
         tools:context=".SplashActivity">
 
 
     <ImageView
             android:id="@+id/logoView"
             android:scaleType="centerCrop"
-            android:src="@drawable/logo1"
+            android:src="@drawable/logo"
             app:shapeAppearanceOverlay="@style/RoundedImageViewStyle"
 
             android:layout_width="230dp"
@@ -34,8 +34,8 @@
             android:layout_height="149dp"
             android:id="@+id/textView2"
             android:textSize="40sp"
-            android:textColor="@color/black"
-            android:background="@color/white"
+            android:textColor="?attr/texts_color"
+            android:background="?attr/screens_background"
 
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -54,7 +54,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/textView3"
             android:textSize="20sp"
-            android:textColor="@color/black"
+            android:textColor="?attr/texts_color"
 
             app:layout_constraintTop_toBottomOf="@id/textView2"
             app:layout_constraintStart_toStartOf="parent"
