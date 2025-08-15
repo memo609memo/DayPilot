@@ -38,6 +38,14 @@ class NotesViewModel : ViewModel() {
 
 
    fun addTask(task: Task) {
+
+      val list = taskMap.getOrPut(task.date) { mutableListOf() }
+      list.add(task)
+
+
+      if (currentSelectedDate == task.date) {
+         _tasksForSelectedDate.value = list.toList()
+      }
       ref.orderByChild("id").equalTo(task.id)
          .addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {

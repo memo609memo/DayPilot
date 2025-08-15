@@ -305,7 +305,7 @@ class NotesFragment : Fragment() {
                 binding.monthWeekdayLabels.visibility = View.GONE
                 binding.headerDateText.visibility = View.VISIBLE
                 binding.monthNavigation.visibility = View.GONE
-                binding.textViewToggleLabel.text ="Monthly View:"
+                binding.textViewToggleLabel.text ="Weekly View:"
             } else {
                 // Switch to month view
                 binding.monthCalendarView.visibility = View.VISIBLE
@@ -313,7 +313,7 @@ class NotesFragment : Fragment() {
                 binding.monthWeekdayLabels.visibility = View.VISIBLE
                 binding.headerDateText.visibility = View.GONE
                 binding.monthNavigation.visibility = View.VISIBLE
-                binding.textViewToggleLabel.text ="Weekly View:"
+                binding.textViewToggleLabel.text ="Monthly View:"
             }
         }
 
@@ -462,7 +462,15 @@ class NotesFragment : Fragment() {
                     priority = selectedPriority
                 )
                 notesViewModel.addTask(task)
+
+                val taskDate = LocalDate.parse(task.date)
+                binding.monthCalendarView.notifyDateChanged(taskDate)
+                binding.weekCalendarView.notifyDateChanged(taskDate)
+
                 notesViewModel.getTasksForDate(date)
+
+
+
 
                 ref.push().setValue(task).addOnFailureListener{
                     Toast.makeText(requireContext(),"Could not add task to database",Toast.LENGTH_SHORT).show()
