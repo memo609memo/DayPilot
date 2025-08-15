@@ -1,15 +1,24 @@
 package com.example.daypilot.ui.notifications
 
+import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
+import android.text.InputFilter
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
+import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.example.daypilot.R
 import com.example.daypilot.databinding.FragmentNotificationsBinding
 import com.example.daypilot.ui.notes.Task
 import com.google.firebase.auth.FirebaseAuth
@@ -19,9 +28,12 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.time.LocalDate
 import java.util.Calendar
+import com.google.firebase.storage.FirebaseStorage
+import com.bumptech.glide.Glide
 
 class NotificationsFragment : Fragment() {
 
+    private var currentTaskKey: String? = null
 
     private val repeatToggles = MutableList(7) { false }
     private var selectedStartHour: Int = -1
@@ -31,9 +43,20 @@ class NotificationsFragment : Fragment() {
 
     private var _binding: FragmentNotificationsBinding? = null
 
+    private val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { imageUri ->
+            getTitle { title ->
+                if (title != null) {
+                    uploadImgToDB(imageUri, title)
+                }
+            }
+        }
+    }
+
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -91,6 +114,12 @@ class NotificationsFragment : Fragment() {
             showRepeatSelectionDialog()
         }
 
+        binding.imageButton.setOnClickListener {
+            imagePicker.launch("image/*")
+        }
+        binding.micButton.setOnClickListener {
+            //addMediaCard("voice", "test")
+        }
 
         return root
     }
@@ -106,27 +135,10 @@ class NotificationsFragment : Fragment() {
             }
                 .setPositiveButton("Ok") { _, _ ->
                     setupRepeatButtons()
-
-                    val taskId = arguments?.getString("taskId") ?: return@setPositiveButton
-                    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setPositiveButton
-                    val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
-
-                    ref.orderByChild("id").equalTo(taskId)
-                        .addListenerForSingleValueEvent(object : ValueEventListener {
-                            override fun onDataChange(snapshot: DataSnapshot) {
-                                for (child in snapshot.children) {
-                                    child.ref.child("repeats").setValue(repeatToggles)
-                                }
-                            }
-                            override fun onCancelled(error: DatabaseError) {
-                                Log.e("Firebase", "Repeats failed to save" + error.message)
-                            }
-                        })
-
                 }
                 .setNegativeButton("Cancel", null)
 
-                builder.create().show()
+        builder.create().show()
     }
 
     private fun setupRepeatButtons() {
@@ -147,22 +159,6 @@ class NotificationsFragment : Fragment() {
             button.setOnClickListener {
                 repeatToggles[index] = !repeatToggles[index]
                 button.isSelected = repeatToggles[index]
-
-                val taskId = arguments?.getString("taskId") ?: return@setOnClickListener
-                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setOnClickListener
-                val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
-
-                ref.orderByChild("id").equalTo(taskId)
-                    .addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            for (child in snapshot.children) {
-                                child.ref.child("repeats").setValue(repeatToggles)
-                            }
-                        }
-                        override fun onCancelled(error: DatabaseError) {
-                            Log.e("Firebase", "Repeats failed to save" + error.message)
-                        }
-                    })
 
 
             }
@@ -234,6 +230,8 @@ class NotificationsFragment : Fragment() {
                     for(taskSnapshot in snapshot.children) {
                         val task = taskSnapshot.getValue(Task::class.java)
                         if (task != null) {
+                            currentTaskKey = taskSnapshot.key
+
                             binding.editTaskName.setText(task.title)
                             binding.noteBody.setText(task.description)
                             binding.taskDate.text = task.date
@@ -244,6 +242,7 @@ class NotificationsFragment : Fragment() {
                                 repeatToggles[index] = value
                             }
                             setupRepeatButtons()
+                            loadMediaCards(currentTaskKey!!)
                             break
                         }
                     }
@@ -281,8 +280,6 @@ class NotificationsFragment : Fragment() {
     }
     private fun updateTaskInFirebase(taskId: String, newTitle: String, newDescription: String,newDate: String) {
 
-
-
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks")
 
@@ -312,4 +309,134 @@ class NotificationsFragment : Fragment() {
                 }
             })
     }
+
+
+
+
+    private fun addMediaCard(type: String, title: String, imageUriOrUrl: Any) {
+
+        val container = binding.cardContainer
+
+        val layoutId = when (type) {
+            "image" -> R.layout.image_card
+            "voice" -> R.layout.voice_card
+            else -> R.layout.image_card
+        }
+
+        val cardView = layoutInflater.inflate(layoutId, container, false)
+
+        val icon = cardView.findViewById<ImageView>(R.id.media_Icon)
+        val label = cardView.findViewById<TextView>(R.id.media_Name)
+
+        label.text = title
+
+        val uri = when (imageUriOrUrl) {
+            is Uri -> imageUriOrUrl
+            is String -> Uri.parse(imageUriOrUrl)
+            else -> return
+        }
+
+        cardView.setOnClickListener {
+            showImagePopup(uri, container, cardView)
+        }
+
+        container.addView(cardView)
+    }
+
+    private fun showImagePopup(imageUri: Uri, container: LinearLayout, view: View) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_image_popup,null)
+        val imageView = dialogView.findViewById<ImageView>(R.id.popupImage)
+        val closeButton = dialogView.findViewById<Button>(R.id.closePopup)
+        val deleteButton = dialogView.findViewById<Button>(R.id.deleteButton)
+
+
+        Glide.with(this)
+            .load(imageUri)
+            .into(imageView)
+
+
+        val dialog = AlertDialog.Builder(requireContext()).setView(dialogView).create()
+
+        closeButton.setOnClickListener { dialog.dismiss()}
+        deleteButton.setOnClickListener {
+            container.removeView(view)
+                dialog.dismiss() }
+        dialog.show()
+    }
+
+    private fun getTitle(title: (String?) -> Unit) {
+        val input = EditText(requireContext())
+        input.hint = "Title"
+        input.maxLines = 1
+        input.filters = arrayOf<InputFilter>(InputFilter.LengthFilter(5))
+
+        val dialog = AlertDialog.Builder(requireContext()).setTitle("Title your Image").setView(input).setPositiveButton("Ok") {_, _ ->
+            val text = input.text.toString().trim()
+            if (text.length in 1..5) {
+                title(text)
+            } else {
+                Toast.makeText(context, "Please enter a valid text up to 5 characters", Toast.LENGTH_LONG).show()
+                title(null)
+            }
+        }.setNegativeButton("Cancel") { _, _ ->
+            title(null)
+        }.create()
+
+        dialog.show()
+    }
+
+    private fun uploadImgToDB(imageUri: Uri, title: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val storageRef = com.google.firebase.storage.FirebaseStorage.getInstance().reference
+        val taskKey = currentTaskKey
+        val imageRef = storageRef.child("/users/$uid/Tasks/$taskKey/${System.currentTimeMillis()}.jpg")
+
+        imageRef.putFile(imageUri).addOnSuccessListener {
+            imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                if (taskKey != null) {
+                    saveImgUrlToDB(taskKey, title, downloadUri.toString())
+                }
+                addMediaCard("image", title, downloadUri)
+            }
+        }
+        .addOnFailureListener {
+            Toast.makeText(context, "Failed to upload image", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun saveImgUrlToDB(taskId: String, title: String, imageUrl: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks/$taskId/media")
+
+        val mediaId = ref.push().key ?: return
+        val mediaData = mapOf(
+            "id" to mediaId,
+            "type" to "image",
+            "title" to title,
+            "url" to imageUrl
+        )
+
+        ref.child(mediaId).setValue(mediaData)
+    }
+
+    private fun loadMediaCards(taskId: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks/$taskId/media")
+
+        ref.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (mediaSnapshot in snapshot.children) {
+                    val type = mediaSnapshot.child("type").getValue(String::class.java) ?: continue
+                    val title = mediaSnapshot.child("title").getValue(String::class.java) ?: continue
+                    val url = mediaSnapshot.child("url").getValue(String::class.java) ?: continue
+
+                    addMediaCard(type, title, url)
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("Error", error.message)
+            }
+        })
+    }
+
 }
