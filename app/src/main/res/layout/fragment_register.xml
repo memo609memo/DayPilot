@@ -73,8 +73,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|center_horizontal"
         android:layout_marginTop="500dp"
-        android:textColor="@color/black"
-        android:backgroundTint="@color/navBarLoginButton"
+        android:textColor="@color/text_color"
+        android:backgroundTint="@color/button_background"
         android:text="Register" />
 
 

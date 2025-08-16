@@ -75,6 +75,10 @@ dependencies {
     implementation("com.google.firebase:firebase-auth:23.2.0")
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
     implementation("com.google.firebase:firebase-database-ktx:21.0.0")
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    implementation("com.github.bumptech.glide:glide:4.12.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
 
 
     implementation ("com.applandeo:material-calendar-view:1.9.0-rc03")
