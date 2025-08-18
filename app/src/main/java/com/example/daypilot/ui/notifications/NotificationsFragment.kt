@@ -189,8 +189,11 @@ class NotificationsFragment : Fragment() {
     }
 
     private fun showTimePickerDialog(initialHour: Int, initialMinute: Int, textView: TextView){
-        val hourToDisplay = if (initialHour != -1) initialHour else 0;
-        val minuteToDisplay = if (initialMinute != -1) initialMinute else 0;
+        val calendar = Calendar.getInstance()
+        val hourToDisplay = if (initialHour != -1) initialHour else calendar.get(Calendar.HOUR_OF_DAY);
+        val minuteToDisplay = if (initialMinute != -1) initialMinute else calendar.get(Calendar.MINUTE);
+
+
 
         val timePickerDialog = TimePickerDialog(
             requireContext(),
@@ -401,7 +404,7 @@ class NotificationsFragment : Fragment() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         val storageRef = com.google.firebase.storage.FirebaseStorage.getInstance().reference
         val taskKey = currentTaskKey
-        val imageRef = storageRef.child("/users/$uid/Tasks/$taskKey/${System.currentTimeMillis()}.jpg")
+        val imageRef = storageRef.child("/users/$uid/tasks/$taskKey/${System.currentTimeMillis()}.jpg")
 
         imageRef.putFile(imageUri).addOnSuccessListener {
             imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
@@ -418,7 +421,7 @@ class NotificationsFragment : Fragment() {
 
     private fun saveImgUrlToDB(taskId: String, title: String, imageUrl: String) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks/$taskId/media")
+        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks/$taskId/media")
 
         val mediaId = ref.push().key ?: return
         val mediaData = mapOf(
@@ -433,7 +436,7 @@ class NotificationsFragment : Fragment() {
 
     private fun loadMediaCards(taskId: String) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/Tasks/$taskId/media")
+        val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks/$taskId/media")
 
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
