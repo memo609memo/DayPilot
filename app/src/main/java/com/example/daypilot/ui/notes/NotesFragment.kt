@@ -1,6 +1,5 @@
 package com.example.daypilot.ui.notes
 
-
 import android.app.TimePickerDialog
 import android.graphics.Typeface
 import android.os.Bundle
@@ -40,31 +39,58 @@ import java.time.format.DateTimeParseException
 import java.util.Calendar
 import java.util.Locale
 
-
 class NotesFragment : Fragment() {
 
     private var _binding: FragmentNotesBinding? = null
     private val binding get() = _binding!!
+
     private lateinit var notesViewModel: NotesViewModel
-    private  lateinit var adapter: TaskAdapter
     private lateinit var hourBlockAdapter: HourBlockAdapter
     private var selectedLocalDate: LocalDate = LocalDate.now()
 
-    //Michael: Adding this for realtime DB
     private val uid = FirebaseAuth.getInstance().currentUser?.uid
-    val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
+    private val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
 
-
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
-    {
-        notesViewModel = ViewModelProvider(this).get(NotesViewModel::class.java)
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        notesViewModel = ViewModelProvider(this)[NotesViewModel::class.java]
         _binding = FragmentNotesBinding.inflate(inflater, container, false)
         val root = binding.root
 
+        setupRecycler()
+        setupCalendars()
 
-        val dragListener = object : TaskDragListener{
+        notesViewModel.tasksForSelectedDate.observe(viewLifecycleOwner) { tasks ->
+            binding.textViewNoTasks.visibility = if (tasks.isEmpty()) View.VISIBLE else View.GONE
+            val hourBlocks = notesViewModel.buildHourBlocksFromTasks(tasks)
+            hourBlockAdapter.showEmptyMessage = tasks.isNotEmpty()
+            hourBlockAdapter.submitList(hourBlocks) {
+                val first = hourBlockAdapter.getFirstTaskPosition()
+                if (first != RecyclerView.NO_POSITION) {
+                    binding.recyclerViewTasks.post { binding.recyclerViewTasks.smoothScrollToPosition(first) }
+                }
+            }
+        }
+
+        notesViewModel.preloadAllTasks {
+            binding.monthCalendarView.notifyCalendarChanged()
+            binding.weekCalendarView.notifyCalendarChanged()
+        }
+
+        binding.btnAddTask.setOnClickListener {
+            notesViewModel.selectedDate.value?.let { selected ->
+                showAddTaskDialog(selected)
+            } ?: Toast.makeText(requireContext(), "Please select a date first", Toast.LENGTH_SHORT).show()
+        }
+
+        val initiallySelectedDate = selectedLocalDate.toString()
+        notesViewModel.selectedDate(initiallySelectedDate)
+        notesViewModel.getTasksForDate(initiallySelectedDate)
+
+        return root
+    }
+
+    private fun setupRecycler() {
+        val dragListener = object : TaskDragListener {
             override fun onTaskMoved(task: Task, fromHour: Int, toHour: Int) {
                 notesViewModel.rescheduleTask(task, fromHour, toHour)
             }
@@ -75,96 +101,43 @@ class NotesFragment : Fragment() {
             onDelete = { task ->
                 notesViewModel.deleteTask(task)
                 notesViewModel.getTasksForDate(task.date)
-                val date = LocalDate.parse(task.date)
-                binding.monthCalendarView.notifyDateChanged(date)
-                binding.weekCalendarView.notifyDateChanged(date)
+                val d = LocalDate.parse(task.date)
+                binding.monthCalendarView.notifyDateChanged(d)
+                binding.weekCalendarView.notifyDateChanged(d)
             },
-            onComplete = { task -> 
+            onComplete = { task ->
                 notesViewModel.markTaskAsCompleted(task)
                 notesViewModel.getTasksForDate(task.date)
-                val date = LocalDate.parse(task.date)
-                binding.monthCalendarView.notifyDateChanged(date)
-                binding.weekCalendarView.notifyDateChanged(date)
+                val d = LocalDate.parse(task.date)
+                binding.monthCalendarView.notifyDateChanged(d)
+                binding.weekCalendarView.notifyDateChanged(d)
             },
             onTaskClick = { task ->
-                val bundle = Bundle().apply {
-                    putString("taskId", task.id)
-                }
+                val bundle = Bundle().apply { putString("taskId", task.id) }
                 findNavController().navigate(R.id.action_navigation_notes_to_notifications, bundle)
             },
             dragListener = dragListener,
-
             dragHelper = null
         )
 
         val dragHelper = TaskDragAndDropHelper(hourBlockAdapter, dragListener)
         hourBlockAdapter.dragHelper = dragHelper
 
-
         binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewTasks.adapter = hourBlockAdapter
         ItemTouchHelper(dragHelper).attachToRecyclerView(binding.recyclerViewTasks)
-        val autoScrollDragListener = TaskAutoScrollDragListener(binding.recyclerViewTasks)
-        binding.root.setOnDragListener(autoScrollDragListener)
+        binding.root.setOnDragListener(TaskAutoScrollDragListener(binding.recyclerViewTasks))
+    }
 
-
-
-        // Attach swipe callback
-        /*val swipeCallback = SwipeToActionCallback(
-             requireContext(),
-             adapter,
-             onEdit = { position ->
-                 val task = adapter.currentList[position]
-                 showEditTaskDialog(task)
-             },
-             onDelete = { position ->
-                 val task = adapter.currentList[position]
-                 notesViewModel.deleteTask(task)
-
-                 //Reload tasks and refresh the red dot for that date
-                 notesViewModel.getTasksForDate(task.date)
-                 val date = LocalDate.parse(task.date)
-                 binding.monthCalendarView.notifyDateChanged(date)
-                 binding.weekCalendarView.notifyDateChanged(date)
-             }
-         )*/
-        //ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.recyclerViewTasks)
-
-        // Observe tasks for selected date to update RecyclerView
-        notesViewModel.tasksForSelectedDate.observe(viewLifecycleOwner) { tasks ->
-            //adapter.submitList(tasks)
-            binding.textViewNoTasks.visibility = if (tasks.isEmpty()) View.VISIBLE else View.GONE
-            val hourBlocks = notesViewModel.buildHourBlocksFromTasks(tasks)
-            hourBlockAdapter.showEmptyMessage = tasks.isNotEmpty()
-
-
-            hourBlockAdapter.submitList(hourBlocks){
-                val firstTaskPosition = hourBlockAdapter.getFirstTaskPosition()
-                if(firstTaskPosition != RecyclerView.NO_POSITION){
-                    binding.recyclerViewTasks.post {
-                        binding.recyclerViewTasks.smoothScrollToPosition(firstTaskPosition)
-                    }
-                }
-            }
-        }
-
-        notesViewModel.preloadAllTasks{
-            binding.monthCalendarView.notifyCalendarChanged()
-            binding.weekCalendarView.notifyCalendarChanged()
-        }
-
-        // Setup initial dates
+    private fun setupCalendars() {
         val currentDate = LocalDate.now()
         val currentMonth = YearMonth.now()
         val startMonth = currentMonth.minusMonths(12)
         val endMonth = currentMonth.plusMonths(12)
         val daysOfWeek = daysOfWeek()
-
-        //  Setup Month CalendarView
-        val monthView = binding.monthCalendarView
         val titleFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
 
-
+        val monthView = binding.monthCalendarView
         monthView.dayViewResource = R.layout.calendar_month_layout
 
         monthView.monthScrollListener = { month ->
@@ -174,7 +147,6 @@ class NotesFragment : Fragment() {
 
         monthView.dayBinder = object : MonthDayBinder<MonthDayViewContainer> {
             override fun create(view: View) = MonthDayViewContainer(view)
-
             override fun bind(container: MonthDayViewContainer, day: CalendarDay) {
                 val date = day.date
                 val isSelected = date == selectedLocalDate
@@ -185,7 +157,6 @@ class NotesFragment : Fragment() {
                 container.dayNumberText.text = date.dayOfMonth.toString()
 
                 if (day.position == DayPosition.MonthDate) {
-                    // Normal styling for current month
                     container.dayNumberText.setTextColor(
                         when {
                             isSelected -> ContextCompat.getColor(requireContext(), android.R.color.white)
@@ -194,30 +165,25 @@ class NotesFragment : Fragment() {
                         }
                     )
                     container.dayNumberText.setTypeface(null, if (isSelected || isToday) Typeface.BOLD else Typeface.NORMAL)
-
                     container.selectedBackground.visibility = if (isSelected) View.VISIBLE else View.GONE
                     container.eventDot.visibility = if (hasTasks) View.VISIBLE else View.GONE
 
                     container.view.isEnabled = true
                     container.view.setOnClickListener {
                         if (selectedLocalDate != date) {
-                            val oldDate = selectedLocalDate
+                            val old = selectedLocalDate
                             selectedLocalDate = date
-                            monthView.notifyDateChanged(oldDate)
+                            monthView.notifyDateChanged(old)
                             monthView.notifyDateChanged(date)
-
                             notesViewModel.selectedDate(date.toString())
                             notesViewModel.getTasksForDate(date.toString())
                         }
                     }
                 } else {
-                    // Disabled styling for days outside current month
                     container.dayNumberText.setTextColor(ContextCompat.getColor(requireContext(), R.color.disabled_day))
                     container.dayNumberText.setTypeface(null, Typeface.NORMAL)
-
                     container.selectedBackground.visibility = View.GONE
                     container.eventDot.visibility = View.GONE
-
                     container.view.isEnabled = false
                     container.view.setOnClickListener(null)
                 }
@@ -226,31 +192,14 @@ class NotesFragment : Fragment() {
         monthView.setup(startMonth, endMonth, daysOfWeek.first())
         monthView.scrollToDate(currentDate)
 
-        binding.buttonPreviousMonth.setOnClickListener {
-            val previousMonth = monthView.findFirstVisibleMonth()?.yearMonth?.minusMonths(1)
-            if (previousMonth != null) {
-                monthView.scrollToMonth(previousMonth)
-            }
-        }
-
-        binding.buttonNextMonth.setOnClickListener {
-            val nextMonth = monthView.findFirstVisibleMonth()?.yearMonth?.plusMonths(1)
-            if (nextMonth != null) {
-                monthView.scrollToMonth(nextMonth)
-            }
-        }
-
-        // Setup Week CalendarView
         val weekView = binding.weekCalendarView
         weekView.dayViewResource = R.layout.calendar_day_layout
         weekView.setup(currentDate.minusWeeks(12), currentDate.plusWeeks(12), daysOfWeek.first())
         weekView.scrollToDate(currentDate)
 
         var selectedWeekDate = currentDate
-
         weekView.dayBinder = object : com.kizitonwose.calendar.view.WeekDayBinder<WeekDayViewContainer> {
             override fun create(view: View) = WeekDayViewContainer(view)
-
             override fun bind(container: WeekDayViewContainer, data: com.kizitonwose.calendar.core.WeekDay) {
                 val date = data.date
                 val isSelected = date == selectedWeekDate
@@ -272,9 +221,9 @@ class NotesFragment : Fragment() {
 
                 container.view.setOnClickListener {
                     if (selectedWeekDate != date) {
-                        val oldDate = selectedWeekDate
+                        val old = selectedWeekDate
                         selectedWeekDate = date
-                        weekView.notifyDateChanged(oldDate)
+                        weekView.notifyDateChanged(old)
                         weekView.notifyDateChanged(selectedWeekDate)
 
                         selectedLocalDate = date
@@ -285,54 +234,38 @@ class NotesFragment : Fragment() {
                 }
             }
         }
+
         binding.headerDateText.text = formatHeaderDate(currentDate)
 
-        // Observe selected date changes and show toast
-        notesViewModel.selectedDate.observe(viewLifecycleOwner) { date ->
-            //Toast.makeText(requireContext(), "Selected: $date", Toast.LENGTH_SHORT).show()
-        }
-
-        // Switch calendar visibility
         binding.switchCalendar.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
-                // Switch to week view
                 binding.monthCalendarView.visibility = View.GONE
                 binding.weekCalendarView.visibility = View.VISIBLE
                 binding.monthWeekdayLabels.visibility = View.GONE
                 binding.headerDateText.visibility = View.VISIBLE
                 binding.monthNavigation.visibility = View.GONE
-                binding.textViewToggleLabel.text ="Monthly View:"
+                binding.textViewToggleLabel.text = "Monthly View:"
             } else {
-                // Switch to month view
                 binding.monthCalendarView.visibility = View.VISIBLE
                 binding.weekCalendarView.visibility = View.GONE
                 binding.monthWeekdayLabels.visibility = View.VISIBLE
                 binding.headerDateText.visibility = View.GONE
                 binding.monthNavigation.visibility = View.VISIBLE
-                binding.textViewToggleLabel.text ="Weekly View:"
+                binding.textViewToggleLabel.text = "Weekly View:"
             }
         }
 
-        // Set initial visibility
         binding.monthCalendarView.visibility = View.VISIBLE
         binding.weekCalendarView.visibility = View.GONE
         binding.headerDateText.visibility = View.GONE
 
-        // Add task button
-        binding.btnAddTask.setOnClickListener {
-            val selected = notesViewModel.selectedDate.value
-            if (selected != null) {
-                showAddTaskDialog(selected)
-            } else {
-                Toast.makeText(requireContext(), "Please select a date first", Toast.LENGTH_SHORT).show()
-            }
+        binding.buttonPreviousMonth.setOnClickListener {
+            monthView.findFirstVisibleMonth()?.yearMonth?.minusMonths(1)?.let(monthView::scrollToMonth)
         }
-        val initiallySelectedDate = selectedLocalDate.toString()
-        notesViewModel.selectedDate(initiallySelectedDate)
-        notesViewModel.getTasksForDate(initiallySelectedDate)
-        return root
+        binding.buttonNextMonth.setOnClickListener {
+            monthView.findFirstVisibleMonth()?.yearMonth?.plusMonths(1)?.let(monthView::scrollToMonth)
+        }
     }
-
 
     private fun showAddTaskDialog(date: String) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
@@ -344,24 +277,19 @@ class NotesFragment : Fragment() {
         val startTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextStartTime)
         val endTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextEndTime)
 
-        // Set up TimePickers
-        startTimeInput.setOnClickListener {
-            showTimePicker { time -> startTimeInput.setText(time) }
-        }
-        endTimeInput.setOnClickListener {
-            showTimePicker { time -> endTimeInput.setText(time) }
-        }
+        startTimeInput.setOnClickListener { showTimePicker { time -> startTimeInput.setText(time) } }
+        endTimeInput.setOnClickListener { showTimePicker { time -> endTimeInput.setText(time) } }
 
-       val dialog = AlertDialog.Builder(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Add Task")
             .setView(dialogView)
             .setPositiveButton("Save", null)
-           .setNegativeButton("Cancel", null)
-           .create()
+            .setNegativeButton("Cancel", null)
+            .create()
 
-        dialog.setOnShowListener{
+        dialog.setOnShowListener {
             val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            saveButton.setOnClickListener{
+            saveButton.setOnClickListener {
                 val title = titleInput.text.toString()
                 val description = descriptionInput.text.toString()
                 val startTime = startTimeInput.text.toString()
@@ -369,56 +297,41 @@ class NotesFragment : Fragment() {
 
                 var isValid = true
 
-
-
-                //validation(edge cases)
-
                 if (title.isBlank()) {
                     titleInputLayout.error = "Title is required"
-                    val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
-                    titleInputLayout.startAnimation(shake)
+                    titleInputLayout.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.shake))
                     isValid = false
-                }else{
-                    titleInputLayout.error = null
-                }
+                } else titleInputLayout.error = null
 
-                // Validate time
                 val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
                 if (startTime.isNotBlank() && endTime.isNotBlank()) {
                     try {
-
                         val start = LocalTime.parse(startTime.uppercase(), formatter)
                         val end = LocalTime.parse(endTime.uppercase(), formatter)
-
                         if (start >= end) {
-
-                            startTimeLayout.error ="Start must be before end"
+                            startTimeLayout.error = "Start must be before end"
                             endTimeLayout.error = "End must be after start"
                             val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
                             startTimeLayout.startAnimation(shake)
                             endTimeLayout.startAnimation(shake)
                             isValid = false
-                        }else {
+                        } else {
                             startTimeLayout.error = null
                             endTimeLayout.error = null
-                            isValid = true
                         }
-                    } catch (e: DateTimeParseException) {
+                    } catch (_: DateTimeParseException) {
                         startTimeLayout.error = "Invalid format"
                         endTimeLayout.error = "Invalid format"
                         val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
                         startTimeLayout.startAnimation(shake)
                         endTimeLayout.startAnimation(shake)
-
                         isValid = false
                     }
                 } else {
-                    // Clear errors if empty
                     startTimeLayout.error = null
                     endTimeLayout.error = null
                 }
 
-                // Only proceed if all fields are valid
                 if (!isValid) return@setOnClickListener
 
                 val task = Task(
@@ -432,161 +345,130 @@ class NotesFragment : Fragment() {
                 )
                 notesViewModel.addTask(task)
                 notesViewModel.getTasksForDate(date)
-
-                ref.push().setValue(task).addOnFailureListener{
-                    Toast.makeText(requireContext(),"Could not add task to database",Toast.LENGTH_SHORT).show()
+                ref.push().setValue(task).addOnFailureListener {
+                    Toast.makeText(requireContext(), "Could not add task to database", Toast.LENGTH_SHORT).show()
                 }
                 dialog.dismiss()
             }
-
         }
         dialog.show()
     }
+
     private fun showTimePicker(onTimeSelected: (String) -> Unit) {
-        val calendar = Calendar.getInstance()
-        val hour = calendar.get(Calendar.HOUR_OF_DAY)
-        val minute = calendar.get(Calendar.MINUTE)
-
-        TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
-            val cal = Calendar.getInstance()
-            cal.set(Calendar.HOUR_OF_DAY, selectedHour)
-            cal.set(Calendar.MINUTE, selectedMinute)
-
-            // Format to 12-hour with AM/PM
-            val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-            val formattedTime = formatter.format(cal.time)
-
-            onTimeSelected(formattedTime)
-
-        }, hour, minute, false).show()
-
-
+        val now = Calendar.getInstance()
+        TimePickerDialog(
+            requireContext(),
+            { _, h, m ->
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, h)
+                    set(Calendar.MINUTE, m)
+                }
+                val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+                onTimeSelected(formatter.format(cal.time))
+            },
+            now.get(Calendar.HOUR_OF_DAY),
+            now.get(Calendar.MINUTE),
+            false
+        ).show()
     }
-        private fun showEditTaskDialog(task: Task) {
+
+    private fun showEditTaskDialog(task: Task) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
+        val titleInputLayout = dialogView.findViewById<TextInputLayout>(R.id.titleInputLayout)
+        val titleInput = dialogView.findViewById<EditText>(R.id.editTextTitle)
+        val descriptionInput = dialogView.findViewById<EditText>(R.id.editTextDescription)
+        val startTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.startTimeLayout)
+        val endTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.endTimeLayout)
+        val startTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextStartTime)
+        val endTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextEndTime)
 
-            val titleInputLayout = dialogView.findViewById<TextInputLayout>(R.id.titleInputLayout)
-            val titleInput = dialogView.findViewById<EditText>(R.id.editTextTitle)
-            val descriptionInput = dialogView.findViewById<EditText>(R.id.editTextDescription)
-            val startTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.startTimeLayout)
-            val endTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.endTimeLayout)
-            val startTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextStartTime)
-            val endTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextEndTime)
+        titleInput.setText(task.title)
+        descriptionInput.setText(task.description)
+        startTimeInput.setText(task.startTime)
+        endTimeInput.setText(task.endTime)
 
-            titleInput.setText(task.title)
-            descriptionInput.setText(task.description)
-            startTimeInput.setText(task.startTime)
-            endTimeInput.setText(task.endTime)
+        startTimeInput.setOnClickListener { showTimePicker { t -> startTimeInput.setText(t) } }
+        endTimeInput.setOnClickListener { showTimePicker { t -> endTimeInput.setText(t) } }
 
-            //Setup time pickers
-            startTimeInput.setOnClickListener {
-                showTimePicker { time -> startTimeInput.setText(time) }
-            }
-            endTimeInput.setOnClickListener {
-                showTimePicker { time -> endTimeInput.setText(time) }
-            }
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Edit Task")
+            .setView(dialogView)
+            .setPositiveButton("Save", null)
+            .setNegativeButton("Cancel", null)
+            .create()
 
-            val dialog = AlertDialog.Builder(requireContext())
-                .setTitle("Edit Task")
-                .setView(dialogView)
-                .setPositiveButton("Save", null)
-                .setNegativeButton("Cancel", null)
-                .create()
+        dialog.setOnShowListener {
+            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            saveButton.setOnClickListener {
+                val title = titleInput.text.toString()
+                val description = descriptionInput.text.toString()
+                val startTime = startTimeInput.text.toString()
+                val endTime = endTimeInput.text.toString()
 
-            dialog.setOnShowListener {
-                val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                saveButton.setOnClickListener {
-                    val title = titleInput.text.toString()
-                    val description = descriptionInput.text.toString()
-                    val startTime = startTimeInput.text.toString()
-                    val endTime = endTimeInput.text.toString()
+                var isValid = true
+                if (title.isBlank()) {
+                    titleInputLayout.error = "Title is required"
+                    titleInputLayout.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.shake))
+                    isValid = false
+                } else titleInputLayout.error = null
 
-                    var isValid = true
-
-                    if (title.isBlank()) {
-                        titleInputLayout.error = "Title is required"
-                        val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
-                        titleInputLayout.startAnimation(shake)
-                        isValid = false
-                    } else {
-                        titleInputLayout.error = null
-                    }
-
-                    val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
-                    if (startTime.isNotBlank() && endTime.isNotBlank()) {
-                        try {
-                            val start = LocalTime.parse(startTime, formatter)
-                            val end = LocalTime.parse(endTime, formatter)
-
-                            if (start >= end) {
-                                startTimeLayout.error = "Start must be before end"
-                                endTimeLayout.error = "End must be after start"
-                                val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
-                                startTimeLayout.startAnimation(shake)
-                                endTimeLayout.startAnimation(shake)
-                                isValid = false
-                            } else {
-                                startTimeLayout.error = null
-                                endTimeLayout.error = null
-                            }
-                        } catch (e: DateTimeParseException) {
-                            startTimeLayout.error = "Invalid time"
-                            endTimeLayout.error = "Invalid time"
+                val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
+                if (startTime.isNotBlank() && endTime.isNotBlank()) {
+                    try {
+                        val start = LocalTime.parse(startTime.uppercase(), formatter)
+                        val end = LocalTime.parse(endTime.uppercase(), formatter)
+                        if (start >= end) {
+                            startTimeLayout.error = "Start must be before end"
+                            endTimeLayout.error = "End must be after start"
                             val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
                             startTimeLayout.startAnimation(shake)
                             endTimeLayout.startAnimation(shake)
                             isValid = false
+                        } else {
+                            startTimeLayout.error = null
+                            endTimeLayout.error = null
                         }
+                    } catch (_: DateTimeParseException) {
+                        startTimeLayout.error = "Invalid time"
+                        endTimeLayout.error = "Invalid time"
+                        val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
+                        startTimeLayout.startAnimation(shake)
+                        endTimeLayout.startAnimation(shake)
+                        isValid = false
                     }
-
-                    if (!isValid) return@setOnClickListener
-
-                    // Create updated task with same ID
-                    val updatedTask = task.copy(
-                        title = title,
-                        description = description,
-                        startTime = startTime,
-                        endTime = endTime
-                    )
-
-                    notesViewModel.updateTask(updatedTask)
-
-                    // Optionally update in Firebase too
-                    val query = ref.orderByChild("id").equalTo(task.id)
-                    query.addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            for (child in snapshot.children) {
-                                child.ref.setValue(updatedTask)
-                            }
-                        }
-
-                        override fun onCancelled(error: DatabaseError) {
-                            Toast.makeText(requireContext(), "Update failed: ${error.message}", Toast.LENGTH_SHORT).show()
-                        }
-                    })
-
-                    dialog.dismiss()
                 }
+
+                if (!isValid) return@setOnClickListener
+
+                val updatedTask = task.copy(
+                    title = title,
+                    description = description,
+                    startTime = startTime,
+                    endTime = endTime
+                )
+                notesViewModel.updateTask(updatedTask)
+
+                val query = ref.orderByChild("id").equalTo(task.id)
+                query.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        for (child in snapshot.children) child.ref.setValue(updatedTask)
+                    }
+                    override fun onCancelled(error: DatabaseError) {
+                        Toast.makeText(requireContext(), "Update failed: ${error.message}", Toast.LENGTH_SHORT).show()
+                    }
+                })
+
+                dialog.dismiss()
             }
-
-            dialog.show()
-
+        }
+        dialog.show()
     }
-
-
-
-
 
     override fun onDestroyView() {
         super.onDestroyView()
-
         _binding = null
     }
-
-
-
 }
-
 
 private fun formatHeaderDate(date: LocalDate): String {
     val formatter = DateTimeFormatter.ofPattern("MMMM d", Locale.getDefault())
