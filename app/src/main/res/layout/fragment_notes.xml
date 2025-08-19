@@ -27,13 +27,12 @@
         app:layout_constraintTop_toTopOf="parent">
 
 
-
         <TextView
             android:id="@+id/textViewToggleLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:text="Weekly View:"
+            android:text="Monthly View:"
             android:textColor="?attr/texts_color"
             android:textSize="16sp"
             android:textStyle="bold" />

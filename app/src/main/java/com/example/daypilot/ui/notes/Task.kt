@@ -9,6 +9,7 @@ data class Task(  val id: String = "",
                   val endTime: String = "",
                   val repeats: List<Boolean> = List(7) { false },
                   @get:PropertyName("completed") @set:PropertyName("completed")
-                  var isCompleted: Boolean = false
+                  var isCompleted: Boolean = false,
+                  val priority: Priority = Priority.DEFAULT
 
     ): Serializable

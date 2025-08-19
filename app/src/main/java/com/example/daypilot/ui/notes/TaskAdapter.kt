@@ -48,9 +48,12 @@ class TaskAdapter(
                 binding.textViewIsCompleted.visibility = View.GONE
                 binding.textViewTime.visibility = View.VISIBLE
                 binding.textViewDescription.visibility = View.VISIBLE
+
+                val priorityColorRes = task.priority?.colorResId ?: R.color.priority_default
                 binding.cardViewTask.setCardBackgroundColor(
-                    ContextCompat.getColor(binding.root.context, R.color.inputTextBox)
+                    ContextCompat.getColor(binding.root.context, priorityColorRes)
                 )
+
             }
 
             val params = binding.cardViewTask.layoutParams
@@ -90,6 +93,7 @@ class TaskAdapter(
     fun setOnStartDragListener(listener: (View, Task) -> Unit) {
         startDragListener = listener
     }
+
 
     class DiffCallBack : DiffUtil.ItemCallback<Task>(){
 

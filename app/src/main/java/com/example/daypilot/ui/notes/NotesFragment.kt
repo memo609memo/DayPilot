@@ -9,7 +9,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
+import android.widget.ArrayAdapter
 import android.widget.EditText
+import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -33,7 +35,9 @@ import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.daysOfWeek
 import com.kizitonwose.calendar.view.MonthDayBinder
 import java.text.SimpleDateFormat
+import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -327,7 +331,7 @@ class NotesFragment : Fragment() {
                 binding.monthWeekdayLabels.visibility = View.GONE
                 binding.headerDateText.visibility = View.VISIBLE
                 binding.monthNavigation.visibility = View.GONE
-                binding.textViewToggleLabel.text ="Monthly View:"
+                binding.textViewToggleLabel.text ="Weekly View:"
             } else {
                 // Switch to month view
                 binding.monthCalendarView.visibility = View.VISIBLE
@@ -335,7 +339,7 @@ class NotesFragment : Fragment() {
                 binding.monthWeekdayLabels.visibility = View.VISIBLE
                 binding.headerDateText.visibility = View.GONE
                 binding.monthNavigation.visibility = View.VISIBLE
-                binding.textViewToggleLabel.text ="Weekly View:"
+                binding.textViewToggleLabel.text ="Monthly View:"
             }
         }
 
@@ -369,13 +373,24 @@ class NotesFragment : Fragment() {
         val endTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.endTimeLayout)
         val startTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextStartTime)
         val endTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextEndTime)
+        val prioritySpinner = dialogView.findViewById<Spinner>(R.id.spinnerPriority)
+
+        //Populate Spinner
+        val priorityList = listOf("Select Priority (Optional)") + Priority.values().map { it.name }
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, priorityList)
+            prioritySpinner.adapter = adapter
 
         // Set up TimePickers
         startTimeInput.setOnClickListener {
-            showTimePicker { time -> startTimeInput.setText(time) }
+            showTimePicker(isStartTime = true) { times ->
+                startTimeInput.setText(times.first)
+                times.second?.let { endTimeInput.setText(it) }
+            }
         }
         endTimeInput.setOnClickListener {
-            showTimePicker { time -> endTimeInput.setText(time) }
+            showTimePicker(isStartTime = false) { times ->
+                endTimeInput.setText(times.first) // only end time
+            }
         }
 
        val dialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
@@ -407,6 +422,13 @@ class NotesFragment : Fragment() {
                 val startTime = startTimeInput.text.toString()
                 val endTime = endTimeInput.text.toString()
 
+                val selectedPosition = prioritySpinner.selectedItemPosition
+                val selectedPriority = if (selectedPosition == 0) {
+                    Priority.DEFAULT // default if none selected
+                } else {
+                    Priority.values()[selectedPosition - 1]
+                }
+
                 var isValid = true
 
 
@@ -427,21 +449,29 @@ class NotesFragment : Fragment() {
                 if (startTime.isNotBlank() && endTime.isNotBlank()) {
                     try {
 
-                        val start = LocalTime.parse(startTime.uppercase(), formatter)
-                        val end = LocalTime.parse(endTime.uppercase(), formatter)
+                        val today = LocalDate.now()
+                        val start = LocalDateTime.of(today, LocalTime.parse(startTime.uppercase(), formatter))
+                        var end = LocalDateTime.of(today, LocalTime.parse(endTime.uppercase(), formatter))
 
-                        if (start >= end) {
+                        // If end is before start, assume next day
+                        if (end.isBefore(start)) {
+                            end = end.plusDays(1)
+                        }
 
-                            startTimeLayout.error ="Start must be before end"
-                            endTimeLayout.error = "End must be after start"
+                        val durationMinutes = Duration.between(start, end).toMinutes()
+
+                        if (durationMinutes <= 0 || durationMinutes > 8 * 60) {
+
+                            startTimeLayout.error = "Start must be before end"
+                            endTimeLayout.error = "End must be after start (max 8h)"
                             val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
                             startTimeLayout.startAnimation(shake)
                             endTimeLayout.startAnimation(shake)
                             isValid = false
-                        }else {
+                        } else {
+
                             startTimeLayout.error = null
                             endTimeLayout.error = null
-                            isValid = true
                         }
                     } catch (e: DateTimeParseException) {
                         startTimeLayout.error = "Invalid format"
@@ -468,18 +498,30 @@ class NotesFragment : Fragment() {
                     date = date,
                     startTime = startTime,
                     endTime = endTime,
-                    isCompleted = false
+                    isCompleted = false,
+                    priority = selectedPriority
                 )
                 notesViewModel.addTask(task)
+
+                val taskDate = LocalDate.parse(task.date)
+                binding.monthCalendarView.notifyDateChanged(taskDate)
+                binding.weekCalendarView.notifyDateChanged(taskDate)
+
                 notesViewModel.getTasksForDate(date)
 
+
+
+
+                ref.push().setValue(task).addOnFailureListener{
+                    Toast.makeText(requireContext(),"Could not add task to database",Toast.LENGTH_SHORT).show()
+                }
                 dialog.dismiss()
             }
 
         }
         dialog.show()
     }
-    private fun showTimePicker(onTimeSelected: (String) -> Unit) {
+    private fun showTimePicker(isStartTime: Boolean, onTimeSelected: (Pair<String, String?>) -> Unit) {
         val calendar = Calendar.getInstance()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
         val minute = calendar.get(Calendar.MINUTE)
@@ -493,8 +535,15 @@ class NotesFragment : Fragment() {
             val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
             val formattedTime = formatter.format(cal.time)
 
-            onTimeSelected(formattedTime)
+            val formattedStart = formatter.format(cal.time)
 
+            if (isStartTime) {
+                cal.add(Calendar.HOUR_OF_DAY, 1)
+                val formattedEnd = formatter.format(cal.time)
+                onTimeSelected(Pair(formattedStart, formattedEnd))
+            } else {
+                onTimeSelected(Pair(formattedStart, null))
+            }
         }, hour, minute, false).show()
 
 
@@ -515,13 +564,7 @@ class NotesFragment : Fragment() {
             startTimeInput.setText(task.startTime)
             endTimeInput.setText(task.endTime)
 
-            //Setup time pickers
-            startTimeInput.setOnClickListener {
-                showTimePicker { time -> startTimeInput.setText(time) }
-            }
-            endTimeInput.setOnClickListener {
-                showTimePicker { time -> endTimeInput.setText(time) }
-            }
+
 
             val dialog = AlertDialog.Builder(requireContext())
                 .setTitle("Edit Task")
