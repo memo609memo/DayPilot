@@ -42,7 +42,6 @@ class TasksViewFragment : Fragment() {
             onDelete = {},
             onComplete = {},
             onItemClicked = { clickedTask ->
-                Toast.makeText(requireContext(), "Clicked Task: ${clickedTask.title}", Toast.LENGTH_SHORT).show()
                 val bundle = Bundle().apply {
                     putString("taskId", clickedTask.id)
                 }

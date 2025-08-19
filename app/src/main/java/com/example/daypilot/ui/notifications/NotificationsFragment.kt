@@ -202,6 +202,12 @@ class NotificationsFragment : Fragment() {
                     binding.startTimeTextView -> {
                         selectedStartHour = selectedHour
                         selectedStartMinute = selectedMinute
+
+                        if(binding.endTimeTextView.text.isBlank()) {
+                            selectedEndHour = selectedHour + 1
+                            selectedEndMinute = selectedMinute
+                            updateTimeTextView(binding.endTimeTextView, selectedEndHour, selectedEndMinute)
+                        }
                     }
                     binding.endTimeTextView -> {
                         selectedEndHour = selectedHour
