@@ -12,17 +12,22 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
+
 class BootReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent?.action == Intent.ACTION_BOOT_COMPLETED) {
+
+
             val uid = FirebaseAuth.getInstance().currentUser?.uid
             val ref = FirebaseDatabase.getInstance().getReference("users/$uid")
+
 
             ref.child("userSettings").addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(settingSnapshot: DataSnapshot) {
                     val notificationsOn = settingSnapshot.child("notificationsOn").getValue(Boolean::class.java) ?: false
                     if (!notificationsOn) return
+
 
                     ref.child("tasks").addListenerForSingleValueEvent(object : ValueEventListener {
                         @RequiresApi(Build.VERSION_CODES.S)
