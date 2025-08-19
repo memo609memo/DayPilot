@@ -84,7 +84,7 @@ class TasksViewFragment : Fragment() {
     }
 
     private fun showAddTaskDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_task_notime, null)
         val titleInput = dialogView.findViewById<EditText>(R.id.editTextTitle)
         val descriptionInput = dialogView.findViewById<EditText>(R.id.editTextDescription)
 
