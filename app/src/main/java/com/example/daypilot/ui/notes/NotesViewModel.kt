@@ -33,14 +33,16 @@ class NotesViewModel : ViewModel() {
     fun hasTasksForDate(date: String): Boolean = taskMap[date]?.isNotEmpty() == true
 
     fun addTask(task: Task) {
+        // writes on firebase then updates the task
         ref.orderByChild("id").equalTo(task.id)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {
                         ref.push().setValue(task).addOnSuccessListener {
-                            taskMap.getOrPut(task.date) { mutableListOf() }.add(task)
+                            val list = taskMap.getOrPut(task.date) { mutableListOf() }
+                            list.add(task)
                             if (currentSelectedDate == task.date) {
-                                _tasksForSelectedDate.value = taskMap[task.date]?.toList().orEmpty()
+                                _tasksForSelectedDate.value = list.toList()
                             }
                         }.addOnFailureListener {
                             Log.e("Firebase", "Failed to add task: ${it.message}")
@@ -140,10 +142,13 @@ class NotesViewModel : ViewModel() {
     fun buildHourBlocksFromTasks(tasks: List<Task>): List<HourBlock> {
         val fmt = SimpleDateFormat("hh:mm a", Locale.getDefault())
         val blocks = mutableMapOf<Int, MutableList<Task>>()
+
         for (t in tasks) {
-            if (t.startTime.isNotBlank()) {
+            val start = t.startTime
+            val end = t.endTime
+            if (!start.isNullOrBlank() && !end.isNullOrBlank()) {
                 try {
-                    val cal = Calendar.getInstance().apply { time = fmt.parse(t.startTime)!! }
+                    val cal = Calendar.getInstance().apply { time = fmt.parse(start)!! }
                     val hour = cal.get(Calendar.HOUR_OF_DAY)
                     blocks.getOrPut(hour) { mutableListOf() }.add(t)
                 } catch (_: Exception) {
@@ -153,6 +158,7 @@ class NotesViewModel : ViewModel() {
                 blocks.getOrPut(-1) { mutableListOf() }.add(t)
             }
         }
+
         return (0..23).map { h -> HourBlock(h, blocks[h] ?: mutableListOf()) }
             .toMutableList().apply {
                 if (blocks.containsKey(-1)) add(0, HourBlock(-1, blocks[-1]!!))
@@ -163,16 +169,17 @@ class NotesViewModel : ViewModel() {
         val fmt = SimpleDateFormat("hh:mm a", Locale.getDefault())
         try {
             val cal = Calendar.getInstance()
+            val originalStart = task.startTime?.takeIf { it.isNotBlank() }?.let { fmt.parse(it) }
+            val originalEnd = task.endTime?.takeIf { it.isNotBlank() }?.let { fmt.parse(it) }
+
             val start: Date
             val end: Date
-
-            val originalStart = task.startTime.takeIf { it.isNotBlank() }?.let { fmt.parse(it) }
-            val originalEnd = task.endTime.takeIf { it.isNotBlank() }?.let { fmt.parse(it) }
 
             if (originalStart != null && originalEnd != null) {
                 val duration = originalEnd.time - originalStart.time
                 cal.time = originalStart
                 val minutes = cal.get(Calendar.MINUTE)
+
                 cal.set(Calendar.HOUR_OF_DAY, toHour)
                 cal.set(Calendar.MINUTE, minutes)
                 start = cal.time
@@ -193,5 +200,73 @@ class NotesViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("Reschedule", "Error updating task time", e)
         }
+    }
+
+    // helper function for floating mic
+
+    fun addTaskFromSpeech(
+        title: String?,
+        date: String?,
+        startTime: String?,
+        endTime: String?,
+        description: String? = "",
+        priority: Priority? = null
+    ) {
+        val safeTitle = (title ?: "").trim()
+        if (safeTitle.isBlank()) {
+            Log.w("SpeechAdd", "Skipped adding task because title is blank")
+            return
+        }
+
+        val targetDate = (date ?: currentSelectedDate).ifBlank {
+            // fallback to today in yyyy-MM-dd
+            val cal = Calendar.getInstance()
+            String.format(
+                Locale.US, "%04d-%02d-%02d",
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH) + 1,
+                cal.get(Calendar.DAY_OF_MONTH)
+            )
+        }
+
+        val fmt = SimpleDateFormat("hh:mm a", Locale.getDefault())
+        var sTime = startTime?.trim().orEmpty()
+        var eTime = endTime?.trim().orEmpty()
+
+        if (sTime.isNotBlank() && eTime.isBlank()) {
+            try {
+                val cal = Calendar.getInstance().apply { time = fmt.parse(sTime)!! }
+                cal.add(Calendar.HOUR_OF_DAY, 1)
+                eTime = fmt.format(cal.time)
+            } catch (_: Exception) { /* ignore and keep blank */ }
+        }
+
+        val task = Task(
+            id = System.currentTimeMillis().toString(),
+            title = safeTitle,
+            description = description.orEmpty(),
+            date = targetDate,
+            startTime = sTime,
+            endTime = eTime,
+            isCompleted = false,
+            priority = priority ?: Priority.DEFAULT
+        )
+        addTask(task)
+        if (currentSelectedDate == targetDate) {
+            getTasksForDate(targetDate)
+        }
+    }
+
+    fun applyNlpResult(fields: Map<String, String?>) {
+        val prio = fields["priority"]?.trim()?.uppercase(Locale.getDefault())
+        val p = runCatching { Priority.valueOf(prio ?: "") }.getOrNull()
+        addTaskFromSpeech(
+            title = fields["title"],
+            date = fields["date"],
+            startTime = fields["start"] ?: fields["startTime"],
+            endTime = fields["end"] ?: fields["endTime"],
+            description = fields["desc"] ?: fields["description"],
+            priority = p
+        )
     }
 }

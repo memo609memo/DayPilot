@@ -1,24 +1,35 @@
 package com.example.daypilot.ui.notes
 
 import android.app.TimePickerDialog
-import android.graphics.Typeface
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
+import android.widget.ArrayAdapter
 import android.widget.EditText
+import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.daypilot.R
+import com.example.daypilot.data.TaskRepo
 import com.example.daypilot.databinding.FragmentNotesBinding
+import com.example.daypilot.ui.floatingbutton.FloatingButton
+import com.example.daypilot.ui.home.HomeViewModel
+import com.example.daypilot.ui.home.HomeViewModelFactory
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.FirebaseAuth
@@ -31,7 +42,9 @@ import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.daysOfWeek
 import com.kizitonwose.calendar.view.MonthDayBinder
 import java.text.SimpleDateFormat
+import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -44,6 +57,13 @@ class NotesFragment : Fragment() {
     private var _binding: FragmentNotesBinding? = null
     private val binding get() = _binding!!
 
+    private inline fun <T> withBinding(block: (FragmentNotesBinding) -> T): T? {
+        val b = _binding ?: return null
+        if (!isAdded) return null
+        if (!viewLifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return null
+        return block(b)
+    }
+
     private lateinit var notesViewModel: NotesViewModel
     private lateinit var hourBlockAdapter: HourBlockAdapter
     private var selectedLocalDate: LocalDate = LocalDate.now()
@@ -51,34 +71,75 @@ class NotesFragment : Fragment() {
     private val uid = FirebaseAuth.getInstance().currentUser?.uid
     private val ref = FirebaseDatabase.getInstance().getReference("users/$uid/tasks")
 
+    // floating mic and ai response set up
+    private val taskRepo = TaskRepo()
+    private val homeVMFactory = HomeViewModelFactory(taskRepo)
+    private val homeViewModel: HomeViewModel by activityViewModels { homeVMFactory }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         notesViewModel = ViewModelProvider(this)[NotesViewModel::class.java]
+        val isDark = requireContext().isDarkMode()
+
         _binding = FragmentNotesBinding.inflate(inflater, container, false)
         val root = binding.root
 
+        // floating mic overlay permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(requireContext())) {
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+        } else {
+            FloatingButton(requireActivity())
+        }
+
+        homeViewModel.aiResponse.observe(viewLifecycleOwner) { reply ->
+            if (reply?.success == true) {
+                val bundle = bundleOf(
+                    "description" to reply.description,
+                    "date" to reply.date,
+                    "time" to reply.time,
+                    "weekday" to reply.weekday
+                )
+                findNavController().navigate(R.id.navigation_notifications, bundle)
+
+                // clear response ao it not always consuming the data and filling in the page n stuck on task page
+                homeViewModel.clearAiResponse()
+            }
+        }
+
+
         setupRecycler()
-        setupCalendars()
+        setupCalendars(isDark)
 
         notesViewModel.tasksForSelectedDate.observe(viewLifecycleOwner) { tasks ->
-            binding.textViewNoTasks.visibility = if (tasks.isEmpty()) View.VISIBLE else View.GONE
-            val hourBlocks = notesViewModel.buildHourBlocksFromTasks(tasks)
-            hourBlockAdapter.showEmptyMessage = tasks.isNotEmpty()
-            hourBlockAdapter.submitList(hourBlocks) {
-                val first = hourBlockAdapter.getFirstTaskPosition()
-                if (first != RecyclerView.NO_POSITION) {
-                    binding.recyclerViewTasks.post { binding.recyclerViewTasks.smoothScrollToPosition(first) }
+            withBinding { b ->
+                b.textViewNoTasks.visibility = if (tasks.isEmpty()) View.VISIBLE else View.GONE
+                val hourBlocks = notesViewModel.buildHourBlocksFromTasks(tasks)
+                hourBlockAdapter.showEmptyMessage = tasks.isNotEmpty()
+
+                hourBlockAdapter.submitList(hourBlocks) {
+                    withBinding { bb ->
+                        val first = hourBlockAdapter.getFirstTaskPosition()
+                        if (first != RecyclerView.NO_POSITION) {
+                            bb.recyclerViewTasks.post {
+                                withBinding { bbb ->
+                                    bbb.recyclerViewTasks.smoothScrollToPosition(first)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
         notesViewModel.preloadAllTasks {
-            binding.monthCalendarView.notifyCalendarChanged()
-            binding.weekCalendarView.notifyCalendarChanged()
+            withBinding { b ->
+                b.monthCalendarView.notifyCalendarChanged()
+                b.weekCalendarView.notifyCalendarChanged()
+            }
         }
 
         binding.btnAddTask.setOnClickListener {
             notesViewModel.selectedDate.value?.let { selected ->
-                showAddTaskDialog(selected)
+                showAddTaskDialog(selected, isDark)
             } ?: Toast.makeText(requireContext(), "Please select a date first", Toast.LENGTH_SHORT).show()
         }
 
@@ -102,15 +163,19 @@ class NotesFragment : Fragment() {
                 notesViewModel.deleteTask(task)
                 notesViewModel.getTasksForDate(task.date)
                 val d = LocalDate.parse(task.date)
-                binding.monthCalendarView.notifyDateChanged(d)
-                binding.weekCalendarView.notifyDateChanged(d)
+                withBinding { b ->
+                    b.monthCalendarView.notifyDateChanged(d)
+                    b.weekCalendarView.notifyDateChanged(d)
+                }
             },
             onComplete = { task ->
                 notesViewModel.markTaskAsCompleted(task)
                 notesViewModel.getTasksForDate(task.date)
                 val d = LocalDate.parse(task.date)
-                binding.monthCalendarView.notifyDateChanged(d)
-                binding.weekCalendarView.notifyDateChanged(d)
+                withBinding { b ->
+                    b.monthCalendarView.notifyDateChanged(d)
+                    b.weekCalendarView.notifyDateChanged(d)
+                }
             },
             onTaskClick = { task ->
                 val bundle = Bundle().apply { putString("taskId", task.id) }
@@ -129,7 +194,7 @@ class NotesFragment : Fragment() {
         binding.root.setOnDragListener(TaskAutoScrollDragListener(binding.recyclerViewTasks))
     }
 
-    private fun setupCalendars() {
+    private fun setupCalendars(isDark: Boolean) {
         val currentDate = LocalDate.now()
         val currentMonth = YearMonth.now()
         val startMonth = currentMonth.minusMonths(12)
@@ -141,7 +206,7 @@ class NotesFragment : Fragment() {
         monthView.dayViewResource = R.layout.calendar_month_layout
 
         monthView.monthScrollListener = { month ->
-            binding.textViewMonthTitle.text = titleFormatter.format(month.yearMonth)
+            withBinding { b -> b.textViewMonthTitle.text = titleFormatter.format(month.yearMonth) }
         }
         binding.textViewMonthTitle.text = titleFormatter.format(currentMonth)
 
@@ -159,12 +224,20 @@ class NotesFragment : Fragment() {
                 if (day.position == DayPosition.MonthDate) {
                     container.dayNumberText.setTextColor(
                         when {
-                            isSelected -> ContextCompat.getColor(requireContext(), android.R.color.white)
-                            isToday -> ContextCompat.getColor(requireContext(), R.color.purple_500)
-                            else -> ContextCompat.getColor(requireContext(), android.R.color.black)
+                            !isDark && isSelected -> resources.getColor(android.R.color.white, null)
+                            isDark && isSelected -> resources.getColor(android.R.color.black, null)
+                            !isDark && isToday -> resources.getColor(R.color.today, null)
+                            isDark && isToday -> resources.getColor(R.color.dark_today, null)
+                            else -> {
+                                if (!isDark) resources.getColor(android.R.color.black, null)
+                                else resources.getColor(android.R.color.white, null)
+                            }
                         }
                     )
-                    container.dayNumberText.setTypeface(null, if (isSelected || isToday) Typeface.BOLD else Typeface.NORMAL)
+                    container.dayNumberText.setTypeface(
+                        null,
+                        if (isSelected || isToday) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL
+                    )
                     container.selectedBackground.visibility = if (isSelected) View.VISIBLE else View.GONE
                     container.eventDot.visibility = if (hasTasks) View.VISIBLE else View.GONE
 
@@ -180,8 +253,9 @@ class NotesFragment : Fragment() {
                         }
                     }
                 } else {
-                    container.dayNumberText.setTextColor(ContextCompat.getColor(requireContext(), R.color.disabled_day))
-                    container.dayNumberText.setTypeface(null, Typeface.NORMAL)
+                    val disabledColor = if (!isDark) R.color.disabled_day else R.color.dark_disabled_day
+                    container.dayNumberText.setTextColor(ContextCompat.getColor(requireContext(), disabledColor))
+                    container.dayNumberText.setTypeface(null, android.graphics.Typeface.NORMAL)
                     container.selectedBackground.visibility = View.GONE
                     container.eventDot.visibility = View.GONE
                     container.view.isEnabled = false
@@ -213,9 +287,14 @@ class NotesFragment : Fragment() {
 
                 container.dayNumberText.setTextColor(
                     when {
-                        isSelected -> resources.getColor(android.R.color.white, null)
-                        isToday -> resources.getColor(R.color.purple_500, null)
-                        else -> resources.getColor(android.R.color.black, null)
+                        !isDark && isSelected -> resources.getColor(android.R.color.white, null)
+                        isDark && isSelected -> resources.getColor(android.R.color.black, null)
+                        !isDark && isToday -> resources.getColor(R.color.today, null)
+                        isDark && isToday -> resources.getColor(R.color.dark_today, null)
+                        else -> {
+                            if (!isDark) resources.getColor(android.R.color.black, null)
+                            else resources.getColor(android.R.color.white, null)
+                        }
                     }
                 )
 
@@ -229,7 +308,7 @@ class NotesFragment : Fragment() {
                         selectedLocalDate = date
                         notesViewModel.selectedDate(date.toString())
                         notesViewModel.getTasksForDate(date.toString())
-                        binding.headerDateText.text = formatHeaderDate(date)
+                        withBinding { b -> b.headerDateText.text = formatHeaderDate(date) }
                     }
                 }
             }
@@ -244,14 +323,14 @@ class NotesFragment : Fragment() {
                 binding.monthWeekdayLabels.visibility = View.GONE
                 binding.headerDateText.visibility = View.VISIBLE
                 binding.monthNavigation.visibility = View.GONE
-                binding.textViewToggleLabel.text = "Monthly View:"
+                binding.textViewToggleLabel.text = "Weekly View:"
             } else {
                 binding.monthCalendarView.visibility = View.VISIBLE
                 binding.weekCalendarView.visibility = View.GONE
                 binding.monthWeekdayLabels.visibility = View.VISIBLE
                 binding.headerDateText.visibility = View.GONE
                 binding.monthNavigation.visibility = View.VISIBLE
-                binding.textViewToggleLabel.text = "Weekly View:"
+                binding.textViewToggleLabel.text = "Monthly View:"
             }
         }
 
@@ -267,7 +346,7 @@ class NotesFragment : Fragment() {
         }
     }
 
-    private fun showAddTaskDialog(date: String) {
+    private fun showAddTaskDialog(date: String, isDark: Boolean) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
         val titleInputLayout = dialogView.findViewById<TextInputLayout>(R.id.titleInputLayout)
         val titleInput = dialogView.findViewById<TextInputEditText>(R.id.editTextTitle)
@@ -276,11 +355,25 @@ class NotesFragment : Fragment() {
         val endTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.endTimeLayout)
         val startTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextStartTime)
         val endTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextEndTime)
+        val prioritySpinner = dialogView.findViewById<Spinner>(R.id.spinnerPriority)
 
-        startTimeInput.setOnClickListener { showTimePicker { time -> startTimeInput.setText(time) } }
-        endTimeInput.setOnClickListener { showTimePicker { time -> endTimeInput.setText(time) } }
+        val priorityList = listOf("Select Priority (Optional)") + Priority.values().map { it.name }
+        val priorityAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, priorityList)
+        prioritySpinner.adapter = priorityAdapter
 
-        val dialog = AlertDialog.Builder(requireContext())
+        startTimeInput.setOnClickListener {
+            showTimePicker(isStartTime = true) { times ->
+                startTimeInput.setText(times.first)
+                times.second?.let { endTimeInput.setText(it) }
+            }
+        }
+        endTimeInput.setOnClickListener {
+            showTimePicker(isStartTime = false) { times ->
+                endTimeInput.setText(times.first)
+            }
+        }
+
+        val dialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
             .setTitle("Add Task")
             .setView(dialogView)
             .setPositiveButton("Save", null)
@@ -289,11 +382,25 @@ class NotesFragment : Fragment() {
 
         dialog.setOnShowListener {
             val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            val cancelButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+
+            if (!isDark) {
+                saveButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_color))
+                cancelButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_color))
+            } else {
+                saveButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.dark_text_color))
+                cancelButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.dark_text_color))
+            }
+
             saveButton.setOnClickListener {
                 val title = titleInput.text.toString()
                 val description = descriptionInput.text.toString()
                 val startTime = startTimeInput.text.toString()
                 val endTime = endTimeInput.text.toString()
+
+                val selectedPosition = prioritySpinner.selectedItemPosition
+                val selectedPriority =
+                    if (selectedPosition == 0) Priority.DEFAULT else Priority.values()[selectedPosition - 1]
 
                 var isValid = true
 
@@ -301,16 +408,21 @@ class NotesFragment : Fragment() {
                     titleInputLayout.error = "Title is required"
                     titleInputLayout.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.shake))
                     isValid = false
-                } else titleInputLayout.error = null
+                } else {
+                    titleInputLayout.error = null
+                }
 
                 val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
                 if (startTime.isNotBlank() && endTime.isNotBlank()) {
                     try {
-                        val start = LocalTime.parse(startTime.uppercase(), formatter)
-                        val end = LocalTime.parse(endTime.uppercase(), formatter)
-                        if (start >= end) {
+                        val today = LocalDate.now()
+                        val start = LocalDateTime.of(today, LocalTime.parse(startTime.uppercase(), formatter))
+                        var end = LocalDateTime.of(today, LocalTime.parse(endTime.uppercase(), formatter))
+                        if (end.isBefore(start)) end = end.plusDays(1)
+                        val durationMinutes = Duration.between(start, end).toMinutes()
+                        if (durationMinutes <= 0 || durationMinutes > 8 * 60) {
                             startTimeLayout.error = "Start must be before end"
-                            endTimeLayout.error = "End must be after start"
+                            endTimeLayout.error = "End must be after start (max 8h)"
                             val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
                             startTimeLayout.startAnimation(shake)
                             endTimeLayout.startAnimation(shake)
@@ -341,10 +453,19 @@ class NotesFragment : Fragment() {
                     date = date,
                     startTime = startTime,
                     endTime = endTime,
-                    isCompleted = false
+                    isCompleted = false,
+                    priority = selectedPriority
                 )
                 notesViewModel.addTask(task)
+
+                val taskDate = LocalDate.parse(task.date)
+                withBinding { b ->
+                    b.monthCalendarView.notifyDateChanged(taskDate)
+                    b.weekCalendarView.notifyDateChanged(taskDate)
+                }
+
                 notesViewModel.getTasksForDate(date)
+
                 ref.push().setValue(task).addOnFailureListener {
                     Toast.makeText(requireContext(), "Could not add task to database", Toast.LENGTH_SHORT).show()
                 }
@@ -354,22 +475,27 @@ class NotesFragment : Fragment() {
         dialog.show()
     }
 
-    private fun showTimePicker(onTimeSelected: (String) -> Unit) {
-        val now = Calendar.getInstance()
-        TimePickerDialog(
-            requireContext(),
-            { _, h, m ->
-                val cal = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, h)
-                    set(Calendar.MINUTE, m)
-                }
-                val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-                onTimeSelected(formatter.format(cal.time))
-            },
-            now.get(Calendar.HOUR_OF_DAY),
-            now.get(Calendar.MINUTE),
-            false
-        ).show()
+    private fun showTimePicker(isStartTime: Boolean, onTimeSelected: (Pair<String, String?>) -> Unit) {
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
+            val cal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, selectedHour)
+                set(Calendar.MINUTE, selectedMinute)
+            }
+            val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+            val formattedStart = formatter.format(cal.time)
+
+            if (isStartTime) {
+                cal.add(Calendar.HOUR_OF_DAY, 1)
+                val formattedEnd = formatter.format(cal.time)
+                onTimeSelected(Pair(formattedStart, formattedEnd))
+            } else {
+                onTimeSelected(Pair(formattedStart, null))
+            }
+        }, hour, minute, false).show()
     }
 
     private fun showEditTaskDialog(task: Task) {
@@ -381,14 +507,31 @@ class NotesFragment : Fragment() {
         val endTimeLayout = dialogView.findViewById<TextInputLayout>(R.id.endTimeLayout)
         val startTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextStartTime)
         val endTimeInput = dialogView.findViewById<TextInputEditText>(R.id.editTextEndTime)
+        val prioritySpinner = dialogView.findViewById<Spinner>(R.id.spinnerPriority)
+
+        val priorityList = listOf("Select Priority (Optional)") + Priority.values().map { it.name }
+        val priorityAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, priorityList)
+        prioritySpinner.adapter = priorityAdapter
 
         titleInput.setText(task.title)
         descriptionInput.setText(task.description)
         startTimeInput.setText(task.startTime)
         endTimeInput.setText(task.endTime)
 
-        startTimeInput.setOnClickListener { showTimePicker { t -> startTimeInput.setText(t) } }
-        endTimeInput.setOnClickListener { showTimePicker { t -> endTimeInput.setText(t) } }
+        val currentPriorityIndex = task.priority?.let { Priority.values().indexOf(it) + 1 } ?: 0
+        prioritySpinner.setSelection(currentPriorityIndex)
+
+        startTimeInput.setOnClickListener {
+            showTimePicker(isStartTime = true) { times ->
+                startTimeInput.setText(times.first)
+                times.second?.let { endTimeInput.setText(it) }
+            }
+        }
+        endTimeInput.setOnClickListener {
+            showTimePicker(isStartTime = false) { times ->
+                endTimeInput.setText(times.first)
+            }
+        }
 
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Edit Task")
@@ -405,21 +548,30 @@ class NotesFragment : Fragment() {
                 val startTime = startTimeInput.text.toString()
                 val endTime = endTimeInput.text.toString()
 
+                val selectedPosition = prioritySpinner.selectedItemPosition
+                val selectedPriority =
+                    if (selectedPosition == 0) Priority.DEFAULT else Priority.values()[selectedPosition - 1]
+
                 var isValid = true
                 if (title.isBlank()) {
                     titleInputLayout.error = "Title is required"
                     titleInputLayout.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.shake))
                     isValid = false
-                } else titleInputLayout.error = null
+                } else {
+                    titleInputLayout.error = null
+                }
 
                 val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
                 if (startTime.isNotBlank() && endTime.isNotBlank()) {
                     try {
-                        val start = LocalTime.parse(startTime.uppercase(), formatter)
-                        val end = LocalTime.parse(endTime.uppercase(), formatter)
-                        if (start >= end) {
+                        val today = LocalDate.now()
+                        val start = LocalDateTime.of(today, LocalTime.parse(startTime.uppercase(), formatter))
+                        var end = LocalDateTime.of(today, LocalTime.parse(endTime.uppercase(), formatter))
+                        if (end.isBefore(start)) end = end.plusDays(1)
+                        val durationMinutes = Duration.between(start, end).toMinutes()
+                        if (durationMinutes <= 0 || durationMinutes > 8 * 60) {
                             startTimeLayout.error = "Start must be before end"
-                            endTimeLayout.error = "End must be after start"
+                            endTimeLayout.error = "End must be after start (max 8h)"
                             val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
                             startTimeLayout.startAnimation(shake)
                             endTimeLayout.startAnimation(shake)
@@ -444,7 +596,8 @@ class NotesFragment : Fragment() {
                     title = title,
                     description = description,
                     startTime = startTime,
-                    endTime = endTime
+                    endTime = endTime,
+                    priority = selectedPriority
                 )
                 notesViewModel.updateTask(updatedTask)
 

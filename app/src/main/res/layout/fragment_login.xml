@@ -6,7 +6,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".ui.login.LoginFragment"
     android:padding="24dp"
-    android:background="@color/backgroundColor">
+    android:background="?attr/screens_background">
 
     <ImageView
         android:id="@+id/logoView"
@@ -15,7 +15,7 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="25dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/logo1"
+        android:src="@drawable/logo"
         app:shapeAppearanceOverlay="@style/RoundedImageViewStyle" />
 
     <com.google.android.material.textfield.TextInputLayout
@@ -58,9 +58,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|center_horizontal"
         android:layout_marginTop="400dp"
-        android:textColor="@color/black"
+        android:textColor="?attr/texts_color"
         android:text="Login"
-        android:backgroundTint="@color/navBarLoginButton"/>
+        android:backgroundTint="?attr/buttons_background"/>
 
     <TextView
         android:id="@+id/goRegisterButton"

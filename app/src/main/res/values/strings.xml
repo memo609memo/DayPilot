@@ -3,11 +3,12 @@
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
-    <string name="title_notes">Notes</string>
+    <string name="title_notes">Calendar</string>
     <string name="title_tasksView">Tasks</string>
-
+    <string name="title_settings">Settings</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title_dayview">DayView</string>
     <string name="title_calendar">Calendar</string>
+    <string name="priority_prompt">Set priority</string>
 </resources>

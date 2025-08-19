@@ -4,14 +4,14 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="12dp"
-    android:background="@android:color/white">
+    android:background="?attr/calendars_background">
 
     <TextView
         android:id="@+id/textViewHour"
         android:layout_width="80dp"
         android:layout_height="wrap_content"
         android:text="08:00"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="?attr/texts_color"
         android:textStyle="bold"
         android:layout_gravity="top" />
 

@@ -7,7 +7,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".ui.notifications.NotificationsFragment"
-        android:background="@color/backgroundColor">
+        android:background="?attr/screens_background">
 
     <EditText
             android:background="@drawable/rounded_edittext_corners"
@@ -144,33 +144,106 @@
             android:ems="10"
             android:id="@+id/endTimeTextView"
             android:textSize="18dp"/>
-    <ScrollView
+
+
+
+
+
+
+
+
+
+    <LinearLayout
+        android:background="@color/white"
+        android:layout_centerHorizontal="true"
+        android:layout_width="340dp"
+        android:layout_height="540dp"
+        android:id="@+id/middleContainer"
+        android:layout_below="@+id/endTimeTextView"
+        android:layout_marginTop="20dp"
+        android:orientation="vertical">
+
+        <ScrollView
             android:background="@color/white"
             android:layout_centerHorizontal="true"
             android:layout_width="340dp"
-            android:layout_height="540dp"
+            android:layout_height="440dp"
             android:id="@+id/scrollView2"
             android:layout_below="@+id/endTimeTextView"
             android:layout_marginTop="20dp">
-        <EditText
-                android:layout_width="320dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:inputType="textMultiLine"
-                android:gravity="start|top"
-                android:ems="10"
-                android:id="@+id/noteBody"/>
-    </ScrollView>
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <EditText
+                    android:layout_width="320dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:inputType="textMultiLine"
+                    android:gravity="start|top"
+                    android:ems="10"
+                    android:id="@+id/noteBody"/>
+
+            </LinearLayout>
+        </ScrollView>
+
+        <HorizontalScrollView
+            android:id="@+id/cardScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/cardContainer"
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+        </LinearLayout>
+
+    </HorizontalScrollView>
+
+    </LinearLayout>
+
+
+
+
     <ImageButton
             android:src="@drawable/microphone"
             android:background="@null"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:id="@+id/micButton"
-            android:layout_below="@+id/scrollView2"
+            android:layout_below="@+id/middleContainer"
             android:layout_alignParentEnd="true"
             android:layout_marginTop="12dp"
             android:layout_marginEnd="30dp"
+            android:scaleType="fitCenter"
+    />
+    <Button
+            android:layout_width="100dp"
+            android:text="Cancel"
+            android:id="@+id/cancelButton"
+            android:layout_height="50dp"
+            android:layout_marginEnd="160dp"
+            android:layout_marginTop="3dp"
+            android:textColor="?attr/texts_color"
+            android:backgroundTint="?attr/buttons_background"
+            android:layout_below="@+id/middleContainer"
+            android:layout_alignParentEnd="true"/>
+    <ImageButton
+            android:src="@drawable/camera_foreground"
+            android:background="@null"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:id="@+id/imageButton"
+            android:layout_below="@+id/middleContainer"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="60dp"
             android:scaleType="fitCenter"
     />
     <Button
@@ -178,7 +251,7 @@
             android:id="@+id/saveButton"
             android:layout_width="100dp"
             android:layout_height="50dp"
-            android:layout_below="@+id/scrollView2"
+            android:layout_below="@+id/middleContainer"
             android:layout_alignParentEnd="true"
             android:layout_marginTop="3dp"
             android:layout_marginEnd="260dp"

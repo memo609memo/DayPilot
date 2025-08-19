@@ -5,5 +5,8 @@
         <attr name="buttons_background" format="color" />
         <attr name="screens_background" format="color" />
         <attr name="texts_color" format="color" />
+        <attr name="calendars_background" format="color"/>
+        <attr name="selectors_color" format="color"/>
+        <attr name="dots_color" format="color"/>
     </declare-styleable>
 </resources>

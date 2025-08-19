@@ -44,7 +44,7 @@ class WeekDayViewContainer(view: View) : ViewContainer(view) {
         // Highlight today (if not selected)
         if (!isSelected && isToday) {
             dayNumberText.setTypeface(null, Typeface.BOLD)
-            dayNumberText.setTextColor(ContextCompat.getColor(context, R.color.colorAccent))
+            dayNumberText.setTextColor(ContextCompat.getColor(context, R.color.dot_color))
         } else {
             dayNumberText.setTypeface(null, Typeface.NORMAL)
         }
