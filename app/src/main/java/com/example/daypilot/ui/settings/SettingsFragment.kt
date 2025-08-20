@@ -24,6 +24,7 @@ import android.widget.Switch
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -93,9 +94,9 @@ class SettingsFragment : Fragment() {
                     settings.receiptsOn = it.receiptsOn
                     settings.notificationsOn = it.notificationsOn
 
-                    view.findViewById<Switch>(R.id.switchDarkMode).isChecked = settings.darkModeOn
-                    view.findViewById<Switch>(R.id.switchReceipts).isChecked = settings.receiptsOn
-                    view.findViewById<Switch>(R.id.switchNotifications).isChecked = settings.notificationsOn
+                    view.findViewById<SwitchCompat>(R.id.switchDarkMode).isChecked = settings.darkModeOn
+                    view.findViewById<SwitchCompat>(R.id.switchReceipts).isChecked = settings.receiptsOn
+                    view.findViewById<SwitchCompat>(R.id.switchNotifications).isChecked = settings.notificationsOn
                 }
 
 
@@ -245,7 +246,7 @@ class SettingsFragment : Fragment() {
 
 
 
-        view.findViewById<Switch>(R.id.switchDarkMode).setOnCheckedChangeListener { _, isChecked ->
+        view.findViewById<SwitchCompat>(R.id.switchDarkMode).setOnCheckedChangeListener { _, isChecked ->
             if (!isChecked) {
                 settings.darkModeOn = false
                 ref.setValue(settings)
@@ -258,7 +259,7 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        view.findViewById<Switch>(R.id.switchNotifications).setOnCheckedChangeListener { _, isChecked ->
+        view.findViewById<SwitchCompat>(R.id.switchNotifications).setOnCheckedChangeListener { _, isChecked ->
             if (!isChecked) {
                 settings.notificationsOn = false
                 ref.setValue(settings)
@@ -271,7 +272,7 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        view.findViewById<Switch>(R.id.switchReceipts).setOnCheckedChangeListener { _, isChecked ->
+        view.findViewById<SwitchCompat>(R.id.switchReceipts).setOnCheckedChangeListener { _, isChecked ->
             if (!isChecked) {
                 settings.receiptsOn = false
                 ref.setValue(settings)

@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#f0f0f0"/> <!-- light gray background -->
-    <stroke android:width="1dp" android:color="#cccccc"/> <!-- subtle border -->
-    <corners android:radius="4dp"/>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <solid android:color="?attr/screens_background" />
+
+    <stroke
+        android:width="2dp"
+        android:color="@color/black" />
+
+    <corners android:radius="8dp" />
+
+
+    <padding
+        android:left="8dp"
+        android:top="4dp"
+        android:right="8dp"
+        android:bottom="4dp" />
 </shape>

@@ -37,9 +37,11 @@
             android:textColor="?attr/texts_color"
             android:textSize="16sp" />
 
-        <Switch
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchNotifications"
             android:layout_width="wrap_content"
+            app:trackTint="?attr/screens_background"
+            app:thumbTint="?attr/buttons_background"
             android:layout_height="wrap_content" />
     </LinearLayout>
 
@@ -63,8 +65,10 @@
             android:textColor="?attr/texts_color"
             android:textSize="16sp" />
 
-        <Switch
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchDarkMode"
+            app:trackTint="?attr/screens_background"
+            app:thumbTint="?attr/buttons_background"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </LinearLayout>
@@ -88,8 +92,10 @@
             android:textColor="?attr/texts_color"
             android:textSize="16sp" />
 
-        <Switch
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchReceipts"
+            app:trackTint="?attr/screens_background"
+            app:thumbTint="?attr/buttons_background"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </LinearLayout>

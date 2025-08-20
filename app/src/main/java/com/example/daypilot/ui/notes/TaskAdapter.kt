@@ -1,9 +1,12 @@
 package com.example.daypilot.ui.notes
 
+import android.content.Context
+import android.content.res.Configuration
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
+
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -28,6 +31,9 @@ class TaskAdapter(
 
     inner class TaskViewHolder(val binding: ItemTaskBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(task: Task) {
+
+            val darkMode = binding.root.context.isDarkMode()
+
             binding.textViewTitle.text = task.title
             binding.textViewDescription.text =
                 task.description.takeIf { it.isNotBlank() } ?: "No description"
@@ -41,17 +47,29 @@ class TaskAdapter(
                 binding.textViewIsCompleted.visibility = View.VISIBLE
                 binding.textViewTime.visibility = View.GONE
                 binding.textViewDescription.visibility = View.GONE
-                binding.cardViewTask.setCardBackgroundColor(
-                    ContextCompat.getColor(binding.root.context, R.color.completedTaskBackground)
-                )
+                if (!darkMode) {
+                    binding.cardViewTask.setCardBackgroundColor(
+                        ContextCompat.getColor(
+                            binding.root.context,
+                            R.color.completedTaskBackground
+                        )
+                    )
+                }
+                else {
+                    binding.cardViewTask.setCardBackgroundColor(
+                        ContextCompat.getColor(
+                            binding.root.context,
+                            R.color.dark_completedTaskBackground
+                        )
+                    )
+                }
             } else {
                 binding.textViewIsCompleted.visibility = View.GONE
                 binding.textViewTime.visibility = View.VISIBLE
                 binding.textViewDescription.visibility = View.VISIBLE
 
-                val priorityColorRes = task.priority?.colorResId ?: R.color.priority_default
                 binding.cardViewTask.setCardBackgroundColor(
-                    ContextCompat.getColor(binding.root.context, priorityColorRes)
+                    task.priority?.getColor(binding.root.context) ?: ContextCompat.getColor(binding.root.context, R.color.priority_default)
                 )
 
             }
@@ -113,5 +131,7 @@ class TaskAdapter(
         val task = getItem(position)
         holder.bind(task)
     }
+
+
 
 }

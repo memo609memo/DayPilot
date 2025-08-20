@@ -91,6 +91,6 @@
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
         android:layout_marginEnd="100dp"
-        android:background="@drawable/spinner_background"
+        android:background="?attr/screens_background"
         android:prompt="@string/priority_prompt" />
 </LinearLayout>

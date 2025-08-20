@@ -23,7 +23,7 @@
     <color name="text_color">#FF000000</color>
     <color name="dark_text_color">#FFFFFFFF</color>
     <color name="completedTaskBackground">#D6EAF8</color>
-
+    <color name="dark_completedTaskBackground">#154360</color>
     <color name="calendar_background">#FFEEF2EF</color>
     <color name="dark_calendar_background">#FF2F3B35</color>
     <color name="selector_color">#FF26A69A</color>
@@ -36,4 +36,7 @@
     <color name="priority_important">#FFA500</color>
     <color name="priority_urgent">#FF4500</color>
 
+    <color name="dark_priority_default">#3a4a45</color>
+    <color name="dark_priority_important">#CC8400</color>
+    <color name="dark_priority_urgent">#CC3700</color>
 </resources>
