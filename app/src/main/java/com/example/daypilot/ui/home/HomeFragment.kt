@@ -44,7 +44,6 @@ class HomeFragment : Fragment() {
         ) {
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
         } else {
-            FloatingButton(requireActivity())
         }
 
         // listening for the ai the redirects it to notification

@@ -5,19 +5,22 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
 import android.icu.util.TimeZone
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.util.Log
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.daypilot.data.TaskRepo
 import com.example.daypilot.databinding.ActivityMainBinding
+import com.example.daypilot.ui.floatingbutton.FloatingButton
 import com.example.daypilot.ui.home.HomeViewModel
 import com.example.daypilot.ui.home.HomeViewModelFactory
 import com.example.daypilot.ui.settings.TaskNotificationManager
@@ -33,7 +36,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    // here we set for the mic from homeview speech to ai-model to notification
     private val taskRepo = TaskRepo()
     private val homeViewModelFactory = HomeViewModelFactory(taskRepo)
     private val homeViewModel: HomeViewModel by viewModels { homeViewModelFactory }
@@ -42,12 +44,16 @@ class MainActivity : AppCompatActivity() {
         const val REQ_SPEECH = 1234
     }
 
+    private val overlayPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (canDrawOverlays()) {
+                FloatingButton.show(this)
+            }
+        }
+
     fun onMicIconClick(@Suppress("UNUSED_PARAMETER") view: View) {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now…")
         }
         startActivityForResult(intent, REQ_SPEECH)
@@ -59,7 +65,6 @@ class MainActivity : AppCompatActivity() {
             val matches: ArrayList<String>? =
                 data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val spoken = matches?.firstOrNull() ?: return
-            // updates live data
             homeViewModel.onNewSpeechText(spoken)
             homeViewModel.sendTextToAi(spoken)
         }
@@ -76,7 +81,6 @@ class MainActivity : AppCompatActivity() {
 
         val navView: BottomNavigationView = binding.navView
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
-
         val appBarConfiguration = AppBarConfiguration(
             setOf(
                 R.id.navigation_notes,
@@ -84,18 +88,13 @@ class MainActivity : AppCompatActivity() {
                 R.id.settingsFragment
             )
         )
-
-        // setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
-
-        //  Firebase  settings n timezone
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid != null) {
             val userRef = FirebaseDatabase.getInstance().getReference("users/$uid")
             val settingsRef = FirebaseDatabase.getInstance().getReference("users/$uid/userSettings")
 
-            // Apply dark mode from DB once at launch
             settingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     snapshot.getValue(UserSettings::class.java)?.let { applyDarkMode(it.darkModeOn) }
@@ -105,12 +104,30 @@ class MainActivity : AppCompatActivity() {
                 }
             })
 
-            //  device timezone for server logic
             val timeZone = TimeZone.getDefault().id
             userRef.updateChildren(mapOf("timeZone" to timeZone))
         } else {
             Log.w("MainActivity", "No Firebase user; skipping settings/timezone update.")
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (canDrawOverlays()) {
+            FloatingButton.show(this)
+        } else {
+            requestOverlayPermission()
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        FloatingButton.hide()
+    }
+
+    override fun onDestroy() {
+        FloatingButton.hide()
+        super.onDestroy()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -129,6 +146,22 @@ class MainActivity : AppCompatActivity() {
             val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             nm.createNotificationChannel(channel)
             Log.d("MainActivity", "Notification Channel Created")
+        }
+    }
+
+    private fun canDrawOverlays(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(this)
+        } else true
+    }
+
+    private fun requestOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            overlayPermissionLauncher.launch(intent)
         }
     }
 }

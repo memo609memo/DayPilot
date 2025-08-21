@@ -87,7 +87,6 @@ class NotesFragment : Fragment() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(requireContext())) {
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
         } else {
-            FloatingButton(requireActivity())
         }
 
         homeViewModel.aiResponse.observe(viewLifecycleOwner) { reply ->

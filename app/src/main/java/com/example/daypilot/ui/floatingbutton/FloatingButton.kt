@@ -15,22 +15,37 @@ import android.widget.Toast
 import com.example.daypilot.MainActivity
 import com.example.daypilot.R
 
+// Do in need the code to req permission
+// do mic in xml ?
 
-class FloatingButton(private val activity: Activity) {
+class FloatingButton private constructor(private val activity: Activity) {
 
     companion object {
         @Volatile
         private var current: FloatingButton? = null  // Made this to ensure floatingbutton is not recreated
+
+        @Synchronized
+        fun show(activity: Activity) {
+            val existing = current
+            if (existing != null) {
+                return
+            }
+            current = FloatingButton(activity)
+        }
+
+        @Synchronized
+        fun hide() {
+            current?.remove()
+            current = null
+        }
     }
 
     private val windowManager =
         activity.getSystemService(Activity.WINDOW_SERVICE) as WindowManager
 
-    // Inflate  layout for the overlay
     private val floatingView: View =
         View.inflate(activity, R.layout.floating_mic_button, null)
 
-    // Set up LayoutParams for overlays
     private val params = WindowManager.LayoutParams(
         WindowManager.LayoutParams.WRAP_CONTENT,
         WindowManager.LayoutParams.WRAP_CONTENT,
@@ -47,37 +62,22 @@ class FloatingButton(private val activity: Activity) {
     }
 
     init {
-        //
-        current?.remove()
-        current = this
-
         val micIcon = floatingView.findViewById<ImageView>(R.id.mic_icon)
-
-        // attach  combined drag or click listener
         micIcon.setOnTouchListener(DragOrClickListener(micIcon))
-
-        // clickListener
         micIcon.setOnClickListener {
             Toast.makeText(activity, "Mic button clicked!", Toast.LENGTH_SHORT).show()
             startSpeechRecognition()
         }
-
-        // add the floating view to WindowManager so it appears on screen
         windowManager.addView(floatingView, params)
     }
-
 
     fun remove() {
         try {
             windowManager.removeView(floatingView)
         } catch (_: Exception) {
-        } finally {
-            if (current === this) current = null
         }
     }
 
-
-    // speech recognition method
     private fun startSpeechRecognition() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(
@@ -100,13 +100,11 @@ class FloatingButton(private val activity: Activity) {
         override fun onTouch(v: View, event: MotionEvent): Boolean {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    // Record where the overlay was and where we pressed
                     initialX = params.x
                     initialY = params.y
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
                     isDragging = false
-                    // Return false so a quick tap still triggers performClick()
                     return false
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -118,23 +116,18 @@ class FloatingButton(private val activity: Activity) {
                     }
 
                     if (isDragging) {
-                        // Update the overlay position
                         params.x = initialX + dx
                         params.y = initialY + dy
                         windowManager.updateViewLayout(floatingView, params)
-                        // Consume the move event so click won’t fire
                         return true
                     }
-                    // If not yet a drag, don’t consume it—could still be a tap
                     return false
                 }
                 MotionEvent.ACTION_UP -> {
                     if (!isDragging) {
-                        // This was a tap (no significant movement)  fire onClick()
                         v.performClick()
                         return true
                     }
-                    // If it was a drag, just take the “up” to finish dragging
                     return true
                 }
             }
