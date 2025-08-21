@@ -15,14 +15,14 @@ import android.widget.Toast
 import com.example.daypilot.MainActivity
 import com.example.daypilot.R
 
-// Do in need the code to req permission
-// do mic in xml ?
 
 class FloatingButton(private val activity: Activity) {
 
+    companion object {
+        @Volatile
+        private var current: FloatingButton? = null  // Made this to ensure floatingbutton is not recreated
+    }
 
-
-    // Get  WindowManager from the activity
     private val windowManager =
         activity.getSystemService(Activity.WINDOW_SERVICE) as WindowManager
 
@@ -48,6 +48,9 @@ class FloatingButton(private val activity: Activity) {
 
     init {
         //
+        current?.remove()
+        current = this
+
         val micIcon = floatingView.findViewById<ImageView>(R.id.mic_icon)
 
         // attach  combined drag or click listener
@@ -65,7 +68,12 @@ class FloatingButton(private val activity: Activity) {
 
 
     fun remove() {
-        windowManager.removeView(floatingView)
+        try {
+            windowManager.removeView(floatingView)
+        } catch (_: Exception) {
+        } finally {
+            if (current === this) current = null
+        }
     }
 
 
