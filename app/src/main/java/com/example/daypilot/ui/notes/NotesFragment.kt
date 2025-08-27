@@ -3,7 +3,6 @@ package com.example.daypilot.ui.notes
 
 import android.app.TimePickerDialog
 import android.graphics.Typeface
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -63,19 +62,23 @@ class NotesFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
     {
+
+        //Initialize ViewModel
         notesViewModel = ViewModelProvider(this).get(NotesViewModel::class.java)
         val isDark = requireContext().isDarkMode()
 
+        //Inflate layout using viewBinding
         _binding = FragmentNotesBinding.inflate(inflater, container, false)
         val root = binding.root
 
-
+        //Drag listener for task rescheduling
         val dragListener = object : TaskDragListener{
             override fun onTaskMoved(task: Task, fromHour: Int, toHour: Int) {
                 notesViewModel.rescheduleTask(task, fromHour, toHour)
             }
         }
 
+        // Set up Hourblock Adapter with callbacks
         hourBlockAdapter = HourBlockAdapter(
             onEdit = { task -> showEditTaskDialog(task) },
             onDelete = { task ->
@@ -103,12 +106,14 @@ class NotesFragment : Fragment() {
             dragHelper = null
         )
 
+        //Initialize drag and drop helper
         val dragHelper = TaskDragAndDropHelper(hourBlockAdapter, dragListener)
         hourBlockAdapter.dragHelper = dragHelper
 
-
+        //Set up recyclerview
         binding.recyclerViewTasks.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewTasks.adapter = hourBlockAdapter
+        //auto-scroll while dragging
         ItemTouchHelper(dragHelper).attachToRecyclerView(binding.recyclerViewTasks)
         val autoScrollDragListener = TaskAutoScrollDragListener(binding.recyclerViewTasks)
         binding.root.setOnDragListener(autoScrollDragListener)
@@ -154,6 +159,7 @@ class NotesFragment : Fragment() {
             }
         }
 
+            //Pre-load all tasks for calendar dot display
         notesViewModel.preloadAllTasks{
             binding.monthCalendarView.notifyCalendarChanged()
             binding.weekCalendarView.notifyCalendarChanged()
@@ -170,7 +176,7 @@ class NotesFragment : Fragment() {
         val monthView = binding.monthCalendarView
         val titleFormatter = DateTimeFormatter.ofPattern("MMMM yyyy")
 
-
+        //Month scroll listener updates title
         monthView.dayViewResource = R.layout.calendar_month_layout
 
         monthView.monthScrollListener = { month ->
@@ -178,6 +184,7 @@ class NotesFragment : Fragment() {
         }
         binding.textViewMonthTitle.text = titleFormatter.format(currentMonth)
 
+        //Day binder for month view
         monthView.dayBinder = object : MonthDayBinder<MonthDayViewContainer> {
             override fun create(view: View) = MonthDayViewContainer(view)
 
@@ -246,6 +253,7 @@ class NotesFragment : Fragment() {
         monthView.setup(startMonth, endMonth, daysOfWeek.first())
         monthView.scrollToDate(currentDate)
 
+            //Month naviagtion Buttons
         binding.buttonPreviousMonth.setOnClickListener {
             val previousMonth = monthView.findFirstVisibleMonth()?.yearMonth?.minusMonths(1)
             if (previousMonth != null) {
@@ -357,6 +365,8 @@ class NotesFragment : Fragment() {
                 Toast.makeText(requireContext(), "Please select a date first", Toast.LENGTH_SHORT).show()
             }
         }
+
+        //Load tasks for initially selected date
         val initiallySelectedDate = selectedLocalDate.toString()
         notesViewModel.selectedDate(initiallySelectedDate)
         notesViewModel.getTasksForDate(initiallySelectedDate)
@@ -365,6 +375,8 @@ class NotesFragment : Fragment() {
 
 
     private fun showAddTaskDialog(date: String) {
+
+        // Get input fields from dialog layout
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_task, null)
         val titleInputLayout = dialogView.findViewById<TextInputLayout>(R.id.titleInputLayout)
         val titleInput = dialogView.findViewById<TextInputEditText>(R.id.editTextTitle)
@@ -387,12 +399,13 @@ class NotesFragment : Fragment() {
                 times.second?.let { endTimeInput.setText(it) }
             }
         }
+        // Setup end time picker
         endTimeInput.setOnClickListener {
             showTimePicker(isStartTime = false) { times ->
                 endTimeInput.setText(times.first) // only end time
             }
         }
-
+        // Create and show dialog
        val dialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
             .setTitle("Add Task")
             .setView(dialogView)
@@ -406,6 +419,7 @@ class NotesFragment : Fragment() {
             val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
             val cancelButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
 
+            // Adjust button colors based on dark mode
             val isDark = requireContext().isDarkMode()
             if (!isDark) {
                 saveButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_color))
@@ -415,13 +429,13 @@ class NotesFragment : Fragment() {
                 saveButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.dark_text_color))
                 cancelButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.dark_text_color))
             }
-
+            // Handle save button click
             saveButton.setOnClickListener{
                 val title = titleInput.text.toString()
                 val description = descriptionInput.text.toString()
                 val startTime = startTimeInput.text.toString()
                 val endTime = endTimeInput.text.toString()
-
+                // Determine selected priority
                 val selectedPosition = prioritySpinner.selectedItemPosition
                 val selectedPriority = if (selectedPosition == 0) {
                     Priority.DEFAULT // default if none selected
@@ -434,7 +448,7 @@ class NotesFragment : Fragment() {
 
 
                 //validation(edge cases)
-
+                // Validate title input
                 if (title.isBlank()) {
                     titleInputLayout.error = "Title is required"
                     val shake = AnimationUtils.loadAnimation(requireContext(), R.anim.shake)
@@ -444,7 +458,7 @@ class NotesFragment : Fragment() {
                     titleInputLayout.error = null
                 }
 
-                // Validate time
+                // Validate start/end times
                 val formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
                 if (startTime.isNotBlank() && endTime.isNotBlank()) {
                     try {
@@ -491,6 +505,7 @@ class NotesFragment : Fragment() {
                 // Only proceed if all fields are valid
                 if (!isValid) return@setOnClickListener
 
+                // Create task object and add it
                 val task = Task(
                     id = System.currentTimeMillis().toString(),
                     title = title,
@@ -502,7 +517,7 @@ class NotesFragment : Fragment() {
                     priority = selectedPriority
                 )
                 notesViewModel.addTask(task)
-
+                // Notify calendars to refresh
                 val taskDate = LocalDate.parse(task.date)
                 binding.monthCalendarView.notifyDateChanged(taskDate)
                 binding.weekCalendarView.notifyDateChanged(taskDate)
@@ -511,16 +526,18 @@ class NotesFragment : Fragment() {
 
 
 
-
-                /*ref.push().setValue(task).addOnFailureListener{
+                // Save task to Firebase
+                ref.push().setValue(task).addOnFailureListener{
                     Toast.makeText(requireContext(),"Could not add task to database",Toast.LENGTH_SHORT).show()
-                }*/
+                }
                 dialog.dismiss()
             }
 
         }
         dialog.show()
     }
+
+    // Shows a time picker dialog and returns selected start/end times
     private fun showTimePicker(isStartTime: Boolean, onTimeSelected: (Pair<String, String?>) -> Unit) {
         val calendar = Calendar.getInstance()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -538,6 +555,7 @@ class NotesFragment : Fragment() {
             val formattedStart = formatter.format(cal.time)
 
             if (isStartTime) {
+
                 cal.add(Calendar.HOUR_OF_DAY, 1)
                 val formattedEnd = formatter.format(cal.time)
                 onTimeSelected(Pair(formattedStart, formattedEnd))
@@ -669,6 +687,7 @@ class NotesFragment : Fragment() {
 
 
 private fun formatHeaderDate(date: LocalDate): String {
+    // Formats a LocalDate to "Month day" for header text
     val formatter = DateTimeFormatter.ofPattern("MMMM d", Locale.getDefault())
     return date.format(formatter)
 }

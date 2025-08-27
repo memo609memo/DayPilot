@@ -35,17 +35,17 @@ class NotesViewModel : ViewModel() {
    }
 
 
-
-
+   // Adds a task to the local map and Firebase if it doesn't already exist
    fun addTask(task: Task) {
-
+// Add task to local map by date
       val list = taskMap.getOrPut(task.date) { mutableListOf() }
       list.add(task)
 
-
+// Update LiveData if the task belongs to the currently selected date
       if (currentSelectedDate == task.date) {
          _tasksForSelectedDate.value = list.toList()
       }
+      // Check Firebase to avoid duplicate tasks
       ref.orderByChild("id").equalTo(task.id)
          .addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -68,11 +68,13 @@ class NotesViewModel : ViewModel() {
             }
          })
    }
+
+   // Checks if there are any tasks for a given date
    fun hasTasksForDate(date: String): Boolean {
       return taskMap[date]?.isNotEmpty() == true
    }
 
-
+   // Retrieves tasks for a specific date from Firebase
    fun getTasksForDate(date: String){
       currentSelectedDate = date
       _selectedDate.value = date
@@ -82,7 +84,7 @@ class NotesViewModel : ViewModel() {
 
       val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
       val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks")
-
+      // Query Firebase for tasks on the selected date
       ref.orderByChild("date").equalTo(date)
          .addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -98,7 +100,7 @@ class NotesViewModel : ViewModel() {
                } else {
                   taskMap[date] = taskList.toMutableList()
                }
-
+               // Update LiveData for selected date
                _tasksForSelectedDate.value = taskList
 
             }
@@ -112,6 +114,7 @@ class NotesViewModel : ViewModel() {
 
    }
 
+   // Deletes a task from Firebase and updates the local map
    fun deleteTask(task: Task) {
       ref.orderByChild("id").equalTo(task.id)
          .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -129,7 +132,7 @@ class NotesViewModel : ViewModel() {
    }
 
 
-
+   // Updates an existing task in Firebase and local map
    fun updateTask(updatedTask: Task) {
       ref.orderByChild("id").equalTo(updatedTask.id)
          .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -146,6 +149,7 @@ class NotesViewModel : ViewModel() {
          })
    }
 
+   // Preloads all tasks from Firebase into the local map
    fun preloadAllTasks(onLoaded: () -> Unit) {
       val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
       val ref = FirebaseDatabase.getInstance().getReference("/users/$uid/tasks")
@@ -168,6 +172,7 @@ class NotesViewModel : ViewModel() {
          }
       })
    }
+   // Converts a list of tasks into HourBlocks for the agenda view
    fun buildHourBlocksFromTasks(tasks: List<Task>): List<HourBlock> {
       val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
@@ -180,6 +185,7 @@ class NotesViewModel : ViewModel() {
                val startHour = start?.hours ?: continue
                blocks.getOrPut(startHour) { mutableListOf() }.add(task)
             } catch (e: Exception) {
+               // Tasks with invalid time go into "All Day"
                blocks.getOrPut(-1) { mutableListOf() }.add(task)
             }
          } else {
@@ -190,12 +196,14 @@ class NotesViewModel : ViewModel() {
       return (0..23).map { hour ->
          HourBlock(hour, blocks[hour] ?: mutableListOf())
       }.toMutableList().apply {
+         // Add "All Day" tasks at the beginning
          if (blocks.containsKey(-1)) {
             add(0, HourBlock(-1, blocks[-1]!!))
          }
       }
    }
 
+   // Marks a task as completed in Firebase and updates local map
    fun markTaskAsCompleted(task: Task){
       val query = ref.orderByChild("id").equalTo(task.id)
 
@@ -216,6 +224,7 @@ class NotesViewModel : ViewModel() {
 
    }
 
+   // Reschedules a task to a new hour, adjusting start/end times and updating Firebase
    fun rescheduleTask(task: Task, fromHour: Int, toHour: Int) {
       val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
       try {
@@ -239,6 +248,7 @@ class NotesViewModel : ViewModel() {
             newEnd = Date(newStart.time + durationMillis)
 
          } else {
+            // Default to 1-hour slot if original times are missing
             calendar.set(Calendar.HOUR_OF_DAY, toHour)
             calendar.set(Calendar.MINUTE, 0)
             newStart = calendar.time
@@ -251,6 +261,7 @@ class NotesViewModel : ViewModel() {
          val newEndTime = formatter.format(newEnd)
 
          val updatedTask = task.copy(startTime = newStartTime, endTime = newEndTime)
+         //Update Locally
          updateTask(updatedTask)
 
          // Update in Firebase
