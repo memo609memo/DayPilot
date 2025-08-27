@@ -19,6 +19,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+//Object that manages scheduling and canceling task notifications
 object TaskNotificationManager {
 
     fun initFirebaseTaskListener(context: Context) {
