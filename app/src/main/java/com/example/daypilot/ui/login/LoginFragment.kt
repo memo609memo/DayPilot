@@ -38,9 +38,11 @@ class LoginFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val viewModel = ViewModelProvider(this).get(LoginViewModel::class.java)
 
+        //store text inputs as values
         val emailText = view.findViewById<EditText>(R.id.emailLoginEditText)
         val passwordText = view.findViewById<EditText>(R.id.passwordLoginEditText)
 
+        //attempt to log user in using the viewmodel and current trimmed text boxes strings
         view.findViewById<Button>(R.id.loginButton).setOnClickListener {
             val email = emailText.text.toString().trim()
             val password = passwordText.text.toString().trim()
@@ -48,10 +50,12 @@ class LoginFragment : Fragment() {
             viewModel.loginUser(email, password)
         }
 
+        // if user needs to sign up instead, this is the button to navigate to registering
         view.findViewById<TextView>(R.id.goRegisterButton).setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
         }
 
+        //if the viewmodel gives a successful login then the user will jump over to the main activity
         viewModel.loginSuccess.observe(viewLifecycleOwner) { success ->
             if (success) {
                 val intent = Intent(context, MainActivity::class.java)
@@ -60,27 +64,32 @@ class LoginFragment : Fragment() {
             }
         }
 
+        //if the viewmodel gives an error for logging in, the user will get informed
         viewModel.loginError.observe(viewLifecycleOwner) { loginError ->
             Toast.makeText(requireContext(), loginError, Toast.LENGTH_SHORT).show()
         }
 
+        //if the user clicks this forgot password button they will get given a popup for resetting their password
         view.findViewById<TextView>(R.id.forgotPasswordButton).setOnClickListener {
             showForgotPasswordDialog()
         }
 
     }
 
+    //this is the popup for users who forgot their password
     private fun showForgotPasswordDialog() {
         val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("Forgot Password")
 
+        //setting up the dialog
+        builder.setTitle("Forgot Password")
         val input = EditText(context)
         input.hint = "Enter your email"
         input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         builder.setView(input)
-
         builder.setPositiveButton("Done") { dialog, _ ->
 
+
+            //make sure email is valid and stored in authentication -> send email unless invalid or not stored
             val email = input.text.toString().trim()
             if (email.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                 FirebaseAuth.getInstance().sendPasswordResetEmail(email).addOnCompleteListener { task ->

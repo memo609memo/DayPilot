@@ -35,18 +35,24 @@ class RegisterFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val viewModel = ViewModelProvider(this).get(RegisterViewModel::class.java)
 
-        //todo: register hardcoding limits for signing up (char count, same password, username exists, etc)
-
+        //variables/////////////////////////////////////////////
+        //assigning text boxes to pull strings from for account creation
         val emailText = view.findViewById<EditText>(R.id.emailRegisterEditText)
         val passwordText = view.findViewById<EditText>(R.id.passwordRegisterEditText)
         val confirmPasswordText = view.findViewById<EditText>(R.id.passwordConfirmRegisterEditText)
+        ////////////////////////////////////////////////////////
 
         view.findViewById<Button>(R.id.registerButton).setOnClickListener {
 
+            //variables/////////////////////////////////////////////
+            //on click we take the textboxes current strings and trim any whitespace
             val email = emailText.text.toString().trim()
             val password = passwordText.text.toString().trim()
             val confirmPassword = confirmPasswordText.text.toString().trim()
+            ////////////////////////////////////////////////////////
 
+
+            // This is my brick wall of requirements for registering an account
             if(email.isEmpty() || password.isEmpty()){
                 Toast.makeText(activity, "Please fill all the fields", Toast.LENGTH_SHORT).show()
             } else if(email == password) {
@@ -59,11 +65,11 @@ class RegisterFragment : Fragment() {
                 Toast.makeText(activity, "Password must be at least 7 characters long", Toast.LENGTH_SHORT).show()
             }
 
+            //send information to viewmodel to attempt creating user
             viewModel.registerUser(email, password)
         }
 
-
-
+        //based on the response from the viewmodel we can either navigate to next fragment or tell the user they ran into an error
         viewModel.registerSuccess.observe(viewLifecycleOwner, { success ->
             if (success) {
                 Toast.makeText(activity, "Registered Successfully, Verify Email", Toast.LENGTH_SHORT).show()
@@ -76,7 +82,7 @@ class RegisterFragment : Fragment() {
 
 
 
-
+        //simple button to navigate to login page if they already have account
         view.findViewById<TextView>(R.id.goLoginButton).setOnClickListener {
             findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
         }

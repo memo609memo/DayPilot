@@ -15,35 +15,47 @@ import com.google.firebase.database.database
 
 class LoginViewModel : ViewModel() {
 
+    //viewmodel for the login screen which includes the login logic and sends to state to the UI
+
+    //Variables///////////////////////////////////////////////////////////////////////////////
+
+    //firebase authentication instance
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
+    //private mutable live data is used locally by the viewmodel
     private val _loginSuccess = MutableLiveData<Boolean>()
-    val loginSuccess: LiveData<Boolean> get() = _loginSuccess
-
     private val _loginError = MutableLiveData<String>()
-    val loginError: LiveData<String> get() = _loginError
 
+    //public live data to observe whether the login functionality works successfully or gives an error to send to the UI
+    val loginSuccess: LiveData<Boolean> get() = _loginSuccess
+    val loginError: LiveData<String> get() = _loginError
+    /////////////////////////////////////////////////////////////////////////////////////////
+
+
+    //This is the login logic
     fun loginUser(email: String, password: String) {
+
+        //user didn't fill all information out
         if(email.isEmpty() || password.isEmpty()) {
             _loginSuccess.value = false
             _loginError.value = "Please fill out all fields"
             return
         }
 
-
+        //firebase call to login
         auth.signInWithEmailAndPassword(email, password)
         .addOnCompleteListener { task ->
-            if(task.isSuccessful) {
+            if(task.isSuccessful) { //user successfully puts correct login information in
                 val user = auth.currentUser
-                if(user != null && user.isEmailVerified) {
+                if(user != null && user.isEmailVerified) { //user successfully logs in and their email is successful
                     _loginSuccess.value = true
 
 
-                } else {
+                } else { //email is not verified error
                     _loginSuccess.value = false
                     _loginError.value = "Email is not verified"
                 }
-            } else {
+            } else { //any other reason the user cannot login
                 _loginError.value = task.exception?.message ?: "ERROR: Maybe check credentials?"
             }
         }

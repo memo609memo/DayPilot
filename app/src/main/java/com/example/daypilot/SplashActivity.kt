@@ -26,7 +26,7 @@ import com.google.firebase.auth.FirebaseAuth
 
 class SplashActivity : AppCompatActivity() {
 
-    private val splashDelay: Long = 2500
+    private val splashDelay: Long = 2500 //this is how long you want the splash screen to be visible for
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,20 +36,18 @@ class SplashActivity : AppCompatActivity() {
 
         Handler(Looper.getMainLooper()).postDelayed({
 
-            //persistent login
-            val user = FirebaseAuth.getInstance().currentUser
-            val intent = if (user != null) {
+            //persistent login section
+            val user = FirebaseAuth.getInstance().currentUser //attempting to grab current user info from auth
 
-
-
+            val intent = if (user != null) { //if user is logged in they get sent to main activity
                 Intent(this@SplashActivity, MainActivity::class.java)
-            } else {
+            } else { //if user isn't logged in they get sent to authentication activity
                 Intent(this@SplashActivity, AuthActivity::class.java)
             }
 
-            startActivity(intent)
+            startActivity(intent) //move to whichever activity given above
             finish()
-        }, splashDelay)
+        }, splashDelay) //call the delay so the screen stays visible for x amount of time
 
 
     }
