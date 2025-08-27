@@ -512,9 +512,9 @@ class NotesFragment : Fragment() {
 
 
 
-                ref.push().setValue(task).addOnFailureListener{
+                /*ref.push().setValue(task).addOnFailureListener{
                     Toast.makeText(requireContext(),"Could not add task to database",Toast.LENGTH_SHORT).show()
-                }
+                }*/
                 dialog.dismiss()
             }
 

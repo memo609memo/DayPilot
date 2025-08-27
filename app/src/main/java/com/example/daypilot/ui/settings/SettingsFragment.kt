@@ -47,12 +47,13 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-
+//App email used for reporting user problems
 val appEmail = "app.daypilot@gmail.com"
 
-
+//API key for SendGrid
 val API_Key = BuildConfig.SENDGRID_API_KEY
 
+//User settings object
 var settings = UserSettings()
 
 
@@ -71,29 +72,33 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        //Gets current user ID and DB ref for user settings
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         val ref = FirebaseDatabase.getInstance().getReference("users/$uid/userSettings")
 
 
 
-
+        //Logout Button
         view.findViewById<Button>(R.id.btnLogout).setOnClickListener {
-            cancelScheduledNotifications(requireContext())
-            FirebaseAuth.getInstance().signOut()
+            cancelScheduledNotifications(requireContext()) //cancels notifications
+            FirebaseAuth.getInstance().signOut() //signs user out
             val intent = Intent(requireContext(), SplashActivity::class.java)
-            AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO))
+            AppCompatDelegate.setDefaultNightMode((AppCompatDelegate.MODE_NIGHT_NO)) //resets night mode setting
             startActivity(intent)
             requireActivity().finish()
         }
 
+        //Loads user settings from Firebase
         ref.addListenerForSingleValueEvent(object: ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val userSettings = snapshot.getValue(UserSettings::class.java)
+
                 userSettings?. let {
                     settings.darkModeOn = it.darkModeOn
                     settings.receiptsOn = it.receiptsOn
                     settings.notificationsOn = it.notificationsOn
 
+                    //Updates switches with settings from Firebase
                     view.findViewById<SwitchCompat>(R.id.switchDarkMode).isChecked = settings.darkModeOn
                     view.findViewById<SwitchCompat>(R.id.switchReceipts).isChecked = settings.receiptsOn
                     view.findViewById<SwitchCompat>(R.id.switchNotifications).isChecked = settings.notificationsOn
@@ -110,8 +115,10 @@ class SettingsFragment : Fragment() {
 
 
 
-
+        //Delete account button
         view.findViewById<Button>(R.id.btnDeleteAccount).setOnClickListener {
+
+            //Prompts user for confirmation
             val input = EditText(requireContext())
             input.hint = "Type DELETE to delete your account."
             input.inputType = InputType.TYPE_TEXT_VARIATION_LONG_MESSAGE
@@ -124,6 +131,8 @@ class SettingsFragment : Fragment() {
                     dialog.dismiss()
                 }
                 .create()
+
+            //Sets AlertDialog style based on day/night modes
             alertDialog.setOnShowListener {
                 val positive = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
                 val negative = alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE)
@@ -161,7 +170,7 @@ class SettingsFragment : Fragment() {
 
             alertDialog.show()
 
-
+            //Confirms user typed "DELETE" and handles account deletion from Firebase and returns them to the login screen
             alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val userInput = input.text.toString().trim()
                 if (userInput == "DELETE") {
@@ -178,7 +187,10 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        //Report problem button
         view.findViewById<Button>(R.id.btnReportProblem).setOnClickListener {
+
+            //Prompts user for problem description
             val input = EditText(context).apply {
                 hint = "Please describe the problem."
                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
@@ -195,6 +207,7 @@ class SettingsFragment : Fragment() {
                 .setPositiveButton("Submit") { dialog, _ ->
                     val userInput = input.text.toString().trim()
                     if (userInput.isNotEmpty()) {
+                        //Sends email to user and app email addresses
                         sendEmailToApp(userInput)
                         sendEmailToUser(userInput)
                         dialog.dismiss()
@@ -208,6 +221,8 @@ class SettingsFragment : Fragment() {
                     dialog.dismiss()
                 }
                 .create()
+
+            //Sets AlertDialog style based on day/night modes
             reportDialog.setOnShowListener {
                 val positive = reportDialog.getButton(AlertDialog.BUTTON_POSITIVE)
                 val negative = reportDialog.getButton(AlertDialog.BUTTON_NEGATIVE)
@@ -245,7 +260,7 @@ class SettingsFragment : Fragment() {
         }
 
 
-
+        //Dark mode switch
         view.findViewById<SwitchCompat>(R.id.switchDarkMode).setOnCheckedChangeListener { _, isChecked ->
             if (!isChecked) {
                 settings.darkModeOn = false
@@ -259,6 +274,7 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        //Notifications switch
         view.findViewById<SwitchCompat>(R.id.switchNotifications).setOnCheckedChangeListener { _, isChecked ->
             if (!isChecked) {
                 settings.notificationsOn = false
@@ -272,6 +288,7 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        //Email receipts switch
         view.findViewById<SwitchCompat>(R.id.switchReceipts).setOnCheckedChangeListener { _, isChecked ->
             if (!isChecked) {
                 settings.receiptsOn = false
@@ -288,6 +305,8 @@ class SettingsFragment : Fragment() {
 fun sendEmailToApp(problem: String) {
 
     val userEmail = FirebaseAuth.getInstance().currentUser?.email
+
+    //Builds JSON request
     val json = JSONObject().apply {
         put("personalizations", JSONArray().apply {
             put(JSONObject().apply {
@@ -339,6 +358,8 @@ fun sendEmailToApp(problem: String) {
 fun sendEmailToUser(problem: String) {
 
     val userEmail = FirebaseAuth.getInstance().currentUser?.email
+
+    //Builds JSON request
     val json = JSONObject().apply {
         put("personalizations", JSONArray().apply {
             put(JSONObject().apply {
@@ -389,6 +410,7 @@ fun checkNotificationPermissions(context: Context) : Boolean {
         val isEnabled = notificationManager.areNotificationsEnabled()
 
         if (!isEnabled) {
+            //Sends user to allow notifications if not enabled
             val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
             intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
             context.startActivity(intent)
@@ -419,6 +441,8 @@ fun checkNotificationPermissions(context: Context) : Boolean {
     return true
 }
 
+
+//Cancels all scheduled notifications
 fun cancelScheduledNotifications(context: Context) {
     Log.d("Debugging Log", "Cancel triggered")
     val uid = FirebaseAuth.getInstance().currentUser?.uid
